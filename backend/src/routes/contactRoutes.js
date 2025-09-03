@@ -51,6 +51,10 @@ const validateContactCreation = [
     .optional()
     .isURL()
     .withMessage('LinkedIn URL must be a valid URL'),
+  body('linkedInUrl')
+    .optional()
+    .isURL()
+    .withMessage('LinkedIn URL must be a valid URL'),
   body('relationshipStrength')
     .optional()
     .isIn(['Weak', 'Medium', 'Strong'])
@@ -71,13 +75,18 @@ const validateContactCreation = [
     .withMessage('Location cannot exceed 100 characters'),
   body('notes')
     .optional()
-    .isArray()
-    .withMessage('Notes must be an array'),
-  body('notes.*')
-    .optional()
-    .trim()
-    .isLength({ min: 1, max: 1000 })
-    .withMessage('Each note must be between 1 and 1000 characters'),
+    .custom((value) => {
+      if (Array.isArray(value)) {
+        // If it's already an array, validate each item
+        return value.every(note => 
+          typeof note === 'string' && 
+          note.trim().length >= 1 && 
+          note.trim().length <= 1000
+        );
+      }
+      return true; // Allow non-array values to be handled by controller
+    })
+    .withMessage('Notes must be an array of strings, each between 1 and 1000 characters'),
   body('source')
     .optional()
     .isIn(['Manual', 'Import', 'LinkedIn', 'Referral', 'Event', 'Other'])
@@ -114,6 +123,10 @@ const validateContactUpdate = [
     .optional()
     .isURL()
     .withMessage('LinkedIn URL must be a valid URL'),
+  body('linkedInUrl')
+    .optional()
+    .isURL()
+    .withMessage('LinkedIn URL must be a valid URL'),
   body('relationshipStrength')
     .optional()
     .isIn(['Weak', 'Medium', 'Strong'])
@@ -134,13 +147,18 @@ const validateContactUpdate = [
     .withMessage('Location cannot exceed 100 characters'),
   body('notes')
     .optional()
-    .isArray()
-    .withMessage('Notes must be an array'),
-  body('notes.*')
-    .optional()
-    .trim()
-    .isLength({ min: 1, max: 1000 })
-    .withMessage('Each note must be between 1 and 1000 characters'),
+    .custom((value) => {
+      if (Array.isArray(value)) {
+        // If it's already an array, validate each item
+        return value.every(note => 
+          typeof note === 'string' && 
+          note.trim().length >= 1 && 
+          note.trim().length <= 1000
+        );
+      }
+      return true; // Allow non-array values to be handled by controller
+    })
+    .withMessage('Notes must be an array of strings, each between 1 and 1000 characters'),
   body('isFavorite')
     .optional()
     .isBoolean()

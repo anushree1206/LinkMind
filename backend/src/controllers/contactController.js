@@ -170,6 +170,7 @@ export const createContact = asyncHandler(async (req, res) => {
     email,
     phone,
     linkedInUrl,
+    linkedin, // Support both field names
     relationshipStrength = 'Medium',
     tags = [],
     location,
@@ -185,7 +186,7 @@ export const createContact = asyncHandler(async (req, res) => {
     company,
     email,
     phone,
-    linkedInUrl,
+    linkedInUrl: linkedInUrl || linkedin, // Use either field name
     relationshipStrength,
     tags,
     location,
@@ -202,7 +203,7 @@ export const createContact = asyncHandler(async (req, res) => {
     company: contact.company,
     email: contact.email,
     phone: contact.phone,
-    linkedin: contact.linkedin,
+    linkedInUrl: contact.linkedInUrl,
     relationshipStrength: contact.relationshipStrength,
     tags: contact.tags,
     location: contact.location,
