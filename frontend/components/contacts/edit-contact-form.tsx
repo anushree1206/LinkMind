@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, Plus, Upload, Trash2 } from "lucide-react"
 import { motion } from "framer-motion"
 import { contactsAPI } from "@/lib/api"
-import { Contact } from "@/types/contact"
+import { Contact } from "@/app/types/contact"
 
 const availableTags = [
   "Work",

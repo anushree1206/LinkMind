@@ -113,16 +113,17 @@ export function AIInsights() {
             <p className="text-sm">Add some contacts to get personalized recommendations</p>
           </div>
         ) : (
-          insights.map((insight, index) => {
-            const IconComponent = getIcon(insight)
-            return (
-              <motion.div
-                key={insight._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.1 }}
-                className="p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors"
-              >
+          <div className="space-y-4">
+            {insights.map((insight, index) => {
+              const IconComponent = getIcon(insight)
+              return (
+                <motion.div
+                  key={insight._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                  className="p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors"
+                >
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0">
                     <div className="relative">
@@ -158,7 +159,7 @@ export function AIInsights() {
                     )}
                     <div className="flex items-center gap-2">
                       {insight.suggestedActions.slice(0, 2).map((action, i) => (
-                        <Button key={i} size="sm" variant="outline" className="text-xs h-7 bg-transparent">
+                        <Button key={`${insight._id}-action-${i}`} size="sm" variant="outline" className="text-xs h-7 bg-transparent">
                           {action}
                         </Button>
                       ))}
@@ -167,7 +168,8 @@ export function AIInsights() {
                 </div>
               </motion.div>
             )
-          })
+          })}
+          </div>
         )}
 
         <div className="pt-2">

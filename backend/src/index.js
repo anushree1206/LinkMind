@@ -14,6 +14,7 @@ import dashboardRoutes from './routes/dashboardRoutes.js';
 import interactionRoutes from './routes/interactionRoutes.js';
 import integrationRoutes from './routes/integrationRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 
 
 // Import middleware
@@ -84,6 +85,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/contacts', contactRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api', interactionRoutes);

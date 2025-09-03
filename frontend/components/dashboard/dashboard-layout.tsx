@@ -61,7 +61,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         if (notifRes?.success) {
           setUnreadCount(notifRes.data.unreadCount || 0)
           // Map server notifications into UI-friendly list if needed
-          const items = (notifRes.data.notifications || notifRes.data.items || []).map((n: any, idx: number) => ({
+          const items = (notifRes.data.notifications || []).map((n: any, idx: number) => ({
             id: n.id || idx,
             title: n.title || n.type || 'Notification',
             detail: n.detail || '',
@@ -69,7 +69,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           }))
           setNotifications(items)
         }
-      } catch {}
+      } catch (error) {
+        console.error('Failed to load notifications:', error)
+      }
     }
 
     init()
@@ -80,7 +82,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       const notifRes = await dashboardAPI.getNotifications()
       if (notifRes?.success) {
         setUnreadCount(notifRes.data.unreadCount || 0)
-        const items = (notifRes.data.notifications || notifRes.data.items || []).map((n: any, idx: number) => ({
+        const items = (notifRes.data.notifications || []).map((n: any, idx: number) => ({
           id: n.id || idx,
           title: n.title || n.type || 'Notification',
           detail: n.detail || '',
@@ -88,7 +90,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         }))
         setNotifications(items)
       }
-    } catch {}
+    } catch (error) {
+      console.error('Failed to refresh notifications:', error)
+    }
   }
 
   const handleLogout = async () => {
@@ -199,24 +203,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </Button>
 
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-            <div className="relative flex flex-1 items-center">
-              <Search className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search contacts..."
-                className="pl-10 bg-muted border-0 focus-visible:ring-1 focus-visible:ring-ring"
-                autoComplete="off"
-              />
-            </div>
+            <div className="flex-1"></div>
 
             <div className="flex items-center gap-4">
-              <Button
-                size="sm"
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
-                onClick={() => setIsAddOpen(true)}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Contact
-              </Button>
 
               <Button
                 variant="ghost"
@@ -267,12 +256,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </div>
 
-        {/* Site-wide, dismissible notification bar */}
-        <NotificationBar
-          message="You have 3 follow-ups due this week. Stay in touch!"
-          ctaLabel="View"
-          onCta={() => setIsNotifOpen(true)}
-        />
 
         {/* Page content */}
         <main className="py-6 px-4 sm:px-6 lg:px-8">{children}</main>

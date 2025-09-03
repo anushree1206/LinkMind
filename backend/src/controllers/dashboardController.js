@@ -2,6 +2,7 @@ import Contact from '../models/Contact.js';
 import Interaction from '../models/Interaction.js';
 import Analytics from '../models/Analytics.js';
 import Message from '../models/Message.js';
+import Notification from '../models/Notification.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 
 /**
@@ -287,6 +288,14 @@ export const getDashboardNotifications = asyncHandler(async (req, res) => {
   const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
+  // Get stored notifications (replies, etc.)
+  const storedNotifications = await Notification.find({
+    user: userId
+  })
+  .populate('relatedContact', 'fullName')
+  .sort({ createdAt: -1 })
+  .limit(10);
+
   // Get contacts due for follow-up this week
   const dueThisWeek = await Contact.find({
     user: userId,
@@ -317,6 +326,19 @@ export const getDashboardNotifications = asyncHandler(async (req, res) => {
   .select('fullName company lastContacted relationshipStrength tags');
 
   const notifications = [];
+
+  // Add stored notifications (replies, etc.)
+  storedNotifications.forEach(notification => {
+    notifications.push({
+      id: notification._id,
+      type: notification.type,
+      title: notification.title,
+      detail: notification.detail,
+      priority: notification.priority,
+      time: notification.timeDisplay,
+      isRead: notification.isRead
+    });
+  });
 
   // Add due this week notifications
   if (dueThisWeek.length > 0) {
@@ -357,37 +379,56 @@ export const getDashboardNotifications = asyncHandler(async (req, res) => {
     });
   }
 
+  // Get unread count
+  const unreadCount = await Notification.getUnreadCount(userId);
+
   res.status(200).json({
     success: true,
     message: 'Notifications retrieved successfully',
     data: {
       notifications,
-      unreadCount: notifications.length
+      unreadCount
     }
   });
 });
 
 /**
  * Get at-risk contacts
- * GET /api/dashboard/at-risk-contacts
+ * GET /api/dashboard/at-risk-contacts?timeframe=daily|weekly|monthly
  * Returns: Top 3 at-risk contacts with AI insights and action suggestions
  */
 export const getAtRiskContacts = asyncHandler(async (req, res) => {
   const userId = req.user._id;
+  const { timeframe = 'monthly' } = req.query;
   const now = new Date();
-  const fortyFiveDaysAgo = new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000);
+  
+  // Calculate timeframe thresholds
+  let thresholdDate;
+  switch (timeframe) {
+    case 'daily':
+      thresholdDate = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000); // 1 day
+      break;
+    case 'weekly':
+      thresholdDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); // 7 days
+      break;
+    case 'monthly':
+    default:
+      thresholdDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days
+      break;
+  }
 
-  // Get at-risk contacts (not contacted in 45+ days or weak relationships)
+  // Get at-risk contacts based on timeframe
   const atRiskContacts = await Contact.find({
     user: userId,
     $or: [
-      { lastContacted: { $lt: fortyFiveDaysAgo } },
+      { lastContacted: { $lt: thresholdDate } },
+      { relationshipStrength: 'At-Risk' },
       { relationshipStrength: 'Weak' }
     ]
   })
   .sort({ lastContacted: 1 })
   .limit(3)
-  .select('fullName company jobTitle lastContacted relationshipStrength tags notes interactions');
+  .select('fullName company jobTitle lastContacted relationshipStrength tags notes interactions email linkedInUrl');
 
   const formattedContacts = atRiskContacts.map(contact => {
     const daysSinceContact = contact.lastContacted 

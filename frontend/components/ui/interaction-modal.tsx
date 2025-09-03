@@ -84,7 +84,7 @@ export function InteractionModal({ isOpen, onClose, contact, onInteractionSent }
         // Also add as interaction for tracking
         const interactionData = {
           type: interactionType,
-          content: message,
+          content: message.trim(),
           outcome: "Positive"
         }
         await interactionAPI.addInteraction(contact._id, interactionData)

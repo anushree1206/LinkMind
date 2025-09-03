@@ -251,8 +251,8 @@ export const dashboardAPI = {
   },
   
   // Get at-risk contacts
-  getAtRiskContacts: async () => {
-    return await apiRequest('/dashboard/at-risk-contacts');
+  getAtRiskContacts: async (timeframe = 'monthly') => {
+    return await apiRequest(`/dashboard/at-risk-contacts?timeframe=${timeframe}`);
   },
   
   // Get relationship distribution
@@ -273,6 +273,35 @@ export const dashboardAPI = {
   // Get complete dashboard summary
   getSummary: async () => {
     return await apiRequest('/dashboard/summary');
+  },
+};
+
+// Notifications API functions
+export const notificationsAPI = {
+  // Get all notifications
+  getNotifications: async (limit = 20, offset = 0) => {
+    return await apiRequest(`/notifications?limit=${limit}&offset=${offset}`);
+  },
+  
+  // Mark notification as read
+  markAsRead: async (notificationId) => {
+    return await apiRequest(`/notifications/${notificationId}/read`, {
+      method: 'PUT'
+    });
+  },
+  
+  // Mark all notifications as read
+  markAllAsRead: async () => {
+    return await apiRequest('/notifications/read-all', {
+      method: 'PUT'
+    });
+  },
+  
+  // Delete notification
+  deleteNotification: async (notificationId) => {
+    return await apiRequest(`/notifications/${notificationId}`, {
+      method: 'DELETE'
+    });
   },
 };
 
@@ -699,5 +728,6 @@ export default {
   interactions: interactionAPI,
   messages: messageAPI,
   integrations: integrationAPI,
+  notifications: notificationsAPI,
   utils: apiUtils,
 };

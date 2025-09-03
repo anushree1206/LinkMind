@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { MessageCircle, Mail, MapPin, Linkedin, Edit, Calendar, TrendingUp, Clock } from "lucide-react"
 import { motion } from "framer-motion"
-import { Contact } from "@/types/contact"
+import { Contact } from "@/app/types/contact"
 
 interface ContactDetailViewProps {
   contact: Contact

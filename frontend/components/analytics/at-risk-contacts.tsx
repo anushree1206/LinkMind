@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { AlertTriangle, MessageCircle, Sparkles } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { AlertTriangle, MessageCircle, Sparkles, Filter } from "lucide-react"
 import { motion } from "framer-motion"
 import { dashboardAPI } from "@/lib/api"
 import { InteractionModal } from "@/components/ui/interaction-modal"
@@ -19,7 +20,16 @@ interface AtRiskContact {
   linkedInUrl?: string
   lastContacted: string
   relationshipStrength: string
+  riskFactor?: number
+  suggestedActions?: Array<{
+    action: string
+    priority: string
+    reason: string
+  }>
+  aiInsights?: string[]
 }
+
+type TimeFrame = 'daily' | 'weekly' | 'monthly'
 
 export function AtRiskContacts() {
   const [atRiskContacts, setAtRiskContacts] = useState<AtRiskContact[]>([])
@@ -27,15 +37,19 @@ export function AtRiskContacts() {
   const [error, setError] = useState("")
   const [selectedContact, setSelectedContact] = useState<AtRiskContact | null>(null)
   const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false)
+  const [timeFrame, setTimeFrame] = useState<TimeFrame>('monthly')
 
   useEffect(() => {
     const fetchAtRiskContacts = async () => {
+      setIsLoading(true)
       try {
-        const response = await dashboardAPI.getSummary()
-        if (response.success) {
-          setAtRiskContacts(response.data.top3AtRiskContacts || [])
+        const data = await dashboardAPI.getAtRiskContacts(timeFrame)
+        
+        if (data.success) {
+          setAtRiskContacts(data.data.atRiskContacts || [])
+          setError("")
         } else {
-          setError("Failed to load at-risk contacts")
+          setError(data.message || "Failed to load at-risk contacts")
         }
       } catch (error: any) {
         console.error("Error fetching at-risk contacts:", error)
@@ -46,7 +60,7 @@ export function AtRiskContacts() {
     }
 
     fetchAtRiskContacts()
-  }, [])
+  }, [timeFrame])
 
   const handleInteraction = (contact: AtRiskContact) => {
     setSelectedContact(contact)
@@ -78,19 +92,17 @@ export function AtRiskContacts() {
     return `${Math.ceil(diffDays / 30)} months ago`
   }
 
-  const refreshContacts = () => {
+  const refreshContacts = async () => {
     // Refresh the contacts list after interaction
-    const fetchAtRiskContacts = async () => {
-      try {
-        const response = await dashboardAPI.getSummary()
-        if (response.success) {
-          setAtRiskContacts(response.data.top3AtRiskContacts || [])
-        }
-      } catch (error: any) {
-        console.error("Error refreshing at-risk contacts:", error)
+    try {
+      const data = await dashboardAPI.getAtRiskContacts(timeFrame)
+      
+      if (data.success) {
+        setAtRiskContacts(data.data.atRiskContacts || [])
       }
+    } catch (error: any) {
+      console.error("Error refreshing at-risk contacts:", error)
     }
-    fetchAtRiskContacts()
   }
 
   if (isLoading) {
@@ -115,10 +127,25 @@ export function AtRiskContacts() {
     <>
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
-            At-Risk Contacts
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              At-Risk Contacts
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={timeFrame} onValueChange={(value: TimeFrame) => setTimeFrame(value)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {error && (

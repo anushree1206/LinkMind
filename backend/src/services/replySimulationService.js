@@ -1,4 +1,5 @@
 import Message from '../models/Message.js';
+import Notification from '../models/Notification.js';
 
 class ReplySimulationService {
   constructor() {
@@ -70,9 +71,20 @@ class ReplySimulationService {
 
       // Update contact's lastContacted field
       const Contact = (await import('../models/Contact.js')).default;
-      await Contact.findByIdAndUpdate(message.contact, {
+      const contact = await Contact.findByIdAndUpdate(message.contact, {
         lastContacted: new Date()
-      });
+      }, { new: true });
+
+      // Create reply notification
+      if (contact) {
+        await Notification.createReplyNotification(
+          message.user,
+          message.contact,
+          messageId,
+          contact.fullName
+        );
+        console.log(`Reply notification created for user ${message.user}`);
+      }
 
     } catch (error) {
       console.error(`Error executing reply for message ${messageId}:`, error);
