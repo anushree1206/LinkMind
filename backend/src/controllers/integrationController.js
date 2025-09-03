@@ -5,7 +5,7 @@ import Interaction from '../models/Interaction.js';
 // Simulate fetching new LinkedIn connections
 export const syncLinkedIn = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     
     // Randomly pick 3-7 contacts from the pool
     const numContacts = Math.floor(Math.random() * 5) + 3;
@@ -89,7 +89,7 @@ export const syncLinkedIn = async (req, res) => {
 export const getAISuggestion = async (req, res) => {
   try {
     const { contactId, interactionType } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
     
     // Find the contact
     const contact = await Contact.findOne({ _id: contactId, user: userId });

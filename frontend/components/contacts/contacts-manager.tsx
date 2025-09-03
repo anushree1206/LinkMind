@@ -15,8 +15,12 @@ import { ContactDetailView } from "./contact-detail-view"
 import { EditContactForm } from "./edit-contact-form"
 import { InteractionModal } from "@/components/ui/interaction-modal"
 import { contactsAPI } from "@/lib/api"
+
+import { Contact } from "@/app/types/contact"
+
 import { Contact, MessageStats } from "../../app/types/contact"
 import { ReplyIndicatorCard } from "../analytics/reply-indicator-card"
+
 
 const allTags = [
   "Work",
@@ -96,11 +100,13 @@ export function ContactsManager() {
   const getStrengthColor = (strength: string) => {
     switch (strength) {
       case "Strong":
-        return "bg-primary text-primary-foreground"
+        return "bg-green-500 text-white"
       case "Medium":
-        return "bg-accent text-accent-foreground"
+        return "bg-yellow-500 text-white"
       case "Weak":
-        return "bg-destructive text-destructive-foreground"
+        return "bg-orange-500 text-white"
+      case "At-Risk":
+        return "bg-red-500 text-white"
       default:
         return "bg-muted text-muted-foreground"
     }
@@ -194,6 +200,7 @@ export function ContactsManager() {
                   <SelectItem value="Strong">Strong</SelectItem>
                   <SelectItem value="Medium">Medium</SelectItem>
                   <SelectItem value="Weak">Weak</SelectItem>
+                  <SelectItem value="At-Risk">At-Risk</SelectItem>
                 </SelectContent>
               </Select>
 

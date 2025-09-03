@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Users, MessageCircle, TrendingUp, Calendar, Linkedin } from "lucide-react"
 import { motion } from "framer-motion"
-import { dashboardAPI, integrationAPI } from "@/lib/api"
+import { dashboardAPI, integrationAPI, contactsAPI } from "@/lib/api"
 
 export function DashboardOverview() {
   const [stats, setStats] = useState([
@@ -41,6 +41,7 @@ export function DashboardOverview() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")
   const [isSyncing, setIsSyncing] = useState(false)
+  const [isUpdatingStrengths, setIsUpdatingStrengths] = useState(false)
 
   useEffect(() => {
     fetchDashboardData()
@@ -66,9 +67,37 @@ export function DashboardOverview() {
       }
     } catch (error: any) {
       console.error('LinkedIn sync error:', error)
-      setError('LinkedIn sync failed: ' + error.message)
+      console.error('Error details:', {
+        message: error.message,
+        status: error.status,
+        details: error.details,
+        errorCode: error.errorCode
+      })
+      setError('LinkedIn sync failed: ' + (error.message || 'Unknown error occurred'))
     } finally {
       setIsSyncing(false)
+    }
+  }
+
+  const handleUpdateRelationshipStrengths = async () => {
+    setIsUpdatingStrengths(true)
+    try {
+      const response = await contactsAPI.updateRelationshipStrengths()
+      if (response.success) {
+        // Refresh dashboard data after update
+        await fetchDashboardData()
+        console.log('Relationship strengths updated:', response.message)
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('data-updated'))
+        }
+      } else {
+        setError('Failed to update relationship strengths: ' + response.message)
+      }
+    } catch (error: any) {
+      console.error('Update relationship strengths error:', error)
+      setError('Failed to update relationship strengths: ' + error.message)
+    } finally {
+      setIsUpdatingStrengths(false)
     }
   }
 
@@ -128,14 +157,25 @@ export function DashboardOverview() {
           <h1 className="text-3xl font-bold text-foreground">Welcome back!</h1>
           <p className="text-muted-foreground">Here's what's happening with your relationships today.</p>
         </div>
-        <Button
-          onClick={handleLinkedInSync}
-          disabled={isSyncing}
-          className="flex items-center gap-2"
-        >
-          <Linkedin className="w-4 h-4" />
-          {isSyncing ? "Syncing..." : "Sync LinkedIn"}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleUpdateRelationshipStrengths}
+            disabled={isUpdatingStrengths}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <TrendingUp className="w-4 h-4" />
+            {isUpdatingStrengths ? "Updating..." : "Update Strengths"}
+          </Button>
+          <Button
+            onClick={handleLinkedInSync}
+            disabled={isSyncing}
+            className="flex items-center gap-2"
+          >
+            <Linkedin className="w-4 h-4" />
+            {isSyncing ? "Syncing..." : "Sync LinkedIn"}
+          </Button>
+        </div>
       </div>
 
       {error && (

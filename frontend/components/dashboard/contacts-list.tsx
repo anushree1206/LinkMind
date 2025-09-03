@@ -9,6 +9,9 @@ import { Input } from "@/components/ui/input"
 import { Search, MessageCircle, Mail, MoreHorizontal, CheckCircle, Clock, AlertCircle } from "lucide-react"
 import { motion } from "framer-motion"
 import { dashboardAPI } from "@/lib/api"
+
+import { Contact } from "@/app/types/contact"
+
 // import { Contact, MessageStats } from "@/types/contact"
 
 interface MessageStats {
@@ -34,6 +37,7 @@ interface Contact {
   linkedInUrl?: string
   messageStats?: MessageStats
 }
+
 
 export function ContactsList() {
   const [contacts, setContacts] = useState<Contact[]>([])

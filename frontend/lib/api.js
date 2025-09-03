@@ -114,14 +114,11 @@ const apiRequest = async (endpoint, options = {}) => {
           };
         }
         
-        console.error('API Error Response:', {
-          status: response.status,
-          statusText: response.statusText,
-          url: response.url,
-          errorData
-        });
+        console.error('API Error Response:', errorData);
+        console.error('Full response status:', response.status);
+        console.error('Response headers:', response.headers);
         
-        const error = new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        const error = new Error(errorData.message || `Request failed with status ${response.status}: ${response.statusText}`);
         error.status = response.status;
         error.details = errorData.details || [];
         error.errorCode = errorData.error;
@@ -385,6 +382,18 @@ export const contactsAPI = {
       body: JSON.stringify({ contactIds, updates }),
     });
   },
+  
+  // Update relationship strengths for all contacts
+  updateRelationshipStrengths: async () => {
+    return await apiRequest('/contacts/update-relationship-strengths', {
+      method: 'POST',
+    });
+  },
+  
+  // Get contacts needing attention
+  getContactsNeedingAttention: async () => {
+    return await apiRequest('/contacts/needing-attention');
+  },
 };
 
 // Analytics API functions
@@ -545,6 +554,11 @@ export const analyticsAPI = {
     return await apiRequest('/analytics/networking-score');
   },
   
+
+  // Get smart nudge suggestion for a contact
+  getSmartNudge: async (contactId) => {
+    return await apiRequest(`/analytics/nudge/${contactId}`);
+
   // Get reply indicators
   getReplyIndicators: async (period = 7) => {
     const queryParams = new URLSearchParams();
@@ -554,6 +568,7 @@ export const analyticsAPI = {
     const endpoint = `/analytics/reply-indicators?${queryString}`;
     
     return await apiRequest(endpoint);
+
   },
 };
 
