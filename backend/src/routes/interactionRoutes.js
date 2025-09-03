@@ -13,7 +13,7 @@ const router = express.Router();
 // Validation middleware for adding interactions
 const validateInteraction = [
   body('type')
-    .isIn(['Email', 'Call', 'Message', 'Meeting', 'Coffee', 'Other'])
+    .isIn(['Email', 'LinkedIn', 'Call', 'Message', 'Meeting', 'Coffee', 'Other'])
     .withMessage('Invalid interaction type'),
   body('content')
     .trim()

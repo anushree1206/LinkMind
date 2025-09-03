@@ -21,7 +21,7 @@ const contactSchema = new mongoose.Schema({
   notes: [noteSchema],
   interactions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Interaction' }],
   isFavorite: { type: Boolean, default: false },
-  source: { type: String, enum: ['Manual', 'Import', 'LinkedIn', 'Referral', 'Event', 'Other'], default: 'Manual' },
+  source: { type: String, enum: ['Manual', 'Import', 'LinkedIn', 'linkedin-sync', 'Referral', 'Event', 'Other'], default: 'Manual' },
   preferences: {
     preferredChannel: { type: String, enum: ['Email', 'LinkedIn'], default: 'Email' }
   }
