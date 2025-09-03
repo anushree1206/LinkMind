@@ -1422,6 +1422,7 @@ export const getNetworkingScore = async (req, res) => {
   }
 };
 
+
 // Get smart nudge suggestion for a contact
 export const getSmartNudge = async (req, res) => {
   try {
@@ -1445,3 +1446,98 @@ export const getSmartNudge = async (req, res) => {
     res.status(500).json({ error: "Failed to generate smart nudge" });
   }
 };
+
+// Get reply indicators
+export const getReplyIndicators = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { period = 7 } = req.query;
+    
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - parseInt(period));
+    
+    // Import Message model
+    const { default: Message } = await import('../models/Message.js');
+    
+    // Get messages with replies in the specified period
+    const messages = await Message.find({
+      user: userId,
+      status: 'responded',
+      repliedAt: { $gte: startDate, $lte: endDate }
+    })
+    .populate('contact', 'fullName company jobTitle')
+    .sort({ repliedAt: -1 });
+    
+    // Calculate total replies
+    const totalReplies = messages.length;
+    
+    // Calculate average response time
+    let totalResponseTime = 0;
+    const recentReplies = [];
+    const mediumBreakdown = {};
+    
+    for (const message of messages) {
+      // Calculate response time in hours
+      const sentAt = new Date(message.createdAt);
+      const repliedAt = new Date(message.repliedAt);
+      const responseTimeHours = (repliedAt - sentAt) / (1000 * 60 * 60);
+      totalResponseTime += responseTimeHours;
+      
+      // Count medium breakdown
+      const medium = message.type.toLowerCase();
+      mediumBreakdown[medium] = (mediumBreakdown[medium] || 0) + 1;
+      
+      // Add to recent replies (limit to 10 most recent)
+      if (recentReplies.length < 10) {
+        recentReplies.push({
+          contactId: message.contact._id,
+          contactName: message.contact.fullName,
+          company: message.contact.company,
+          medium: medium,
+          repliedAt: message.repliedAt,
+          replyContent: message.replyContent || 'Reply received',
+          originalMessageType: message.type,
+          responseTime: responseTimeHours
+        });
+      }
+    }
+    
+    const averageResponseTime = totalReplies > 0 ? totalResponseTime / totalReplies : 0;
+    
+    // Get all messages in period to calculate additional stats
+    const allMessages = await Message.find({
+      user: userId,
+      createdAt: { $gte: startDate, $lte: endDate }
+    });
+    
+    const responseRate = allMessages.length > 0 ? (totalReplies / allMessages.length) * 100 : 0;
+    
+    const data = {
+      period: {
+        start: startDate.toISOString(),
+        end: endDate.toISOString()
+      },
+      totalReplies,
+      recentReplies,
+      mediumBreakdown,
+      averageResponseTime,
+      responseRate: Math.round(responseRate)
+    };
+    
+    res.json({
+      success: true,
+      data
+    });
+    
+  } catch (error) {
+    console.error('Error fetching reply indicators:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch reply indicators',
+      error: error.message
+    });
+  }
+};
+
+

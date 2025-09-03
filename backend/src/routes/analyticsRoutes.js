@@ -12,8 +12,10 @@ import {
   getFollowUpEffectiveness,
   getRelationshipHealthTimeline,
   getRiskContactsAnalysis,
-  getNetworkingScore
+  getNetworkingScore,
+  getReplyIndicators
 } from '../controllers/analyticsController.js';
+import replySimulationService from '../services/replySimulationService.js';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -72,6 +74,126 @@ router.get('/risk-contacts', getRiskContactsAnalysis);
 // Get networking score
 // GET /api/analytics/networking-score
 router.get('/networking-score', getNetworkingScore);
+
+// Get reply indicators
+// GET /api/analytics/reply-indicators?period=7
+router.get('/reply-indicators', getReplyIndicators);
+
+// Get response rate for messages
+// GET /api/analytics/response-rate
+router.get('/response-rate', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const responseRate = await replySimulationService.calculateResponseRate(userId);
+    
+    res.json({
+      success: true,
+      data: {
+        responseRate,
+        description: `${responseRate}% of your messages have received responses`
+      }
+    });
+  } catch (error) {
+    console.error('Error getting response rate:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get response rate',
+      error: error.message
+    });
+  }
+});
+
+// Get pending follow-ups count
+// GET /api/analytics/followups
+router.get('/followups', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const pendingCount = await replySimulationService.getPendingFollowUpsCount(userId);
+    
+    res.json({
+      success: true,
+      data: {
+        pendingFollowUps: pendingCount,
+        description: `You have ${pendingCount} messages awaiting responses`
+      }
+    });
+  } catch (error) {
+    console.error('Error getting pending follow-ups:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get pending follow-ups',
+      error: error.message
+    });
+  }
+});
+
+// Get communication medium effectiveness
+// GET /api/analytics/communication-medium-effectiveness?period=30&viewMode=overall&contactId=123
+router.get('/communication-medium-effectiveness', (req, res) => {
+  const { period = '30', viewMode = 'overall', contactId } = req.query;
+  
+  const overallData = [
+    {
+      medium: 'LinkedIn',
+      interactions: 45,
+      responses: 38,
+      responseRate: 84,
+      effectiveness: 89
+    },
+    {
+      medium: 'Email',
+      interactions: 32,
+      responses: 24,
+      responseRate: 75,
+      effectiveness: 78
+    }
+  ];
+
+  const contactData = [
+    {
+      contactId: 'contact1',
+      contactName: 'Sarah Chen',
+      mediums: [
+        { medium: 'LinkedIn', interactions: 8, responses: 7, responseRate: 88, effectiveness: 91 },
+        { medium: 'Email', interactions: 5, responses: 4, responseRate: 80, effectiveness: 85 }
+      ]
+    },
+    {
+      contactId: 'contact2',
+      contactName: 'John Smith',
+      mediums: [
+        { medium: 'LinkedIn', interactions: 12, responses: 9, responseRate: 75, effectiveness: 82 },
+        { medium: 'Email', interactions: 8, responses: 6, responseRate: 75, effectiveness: 78 }
+      ]
+    },
+    {
+      contactId: 'contact3',
+      contactName: 'Emily Rodriguez',
+      mediums: [
+        { medium: 'LinkedIn', interactions: 15, responses: 13, responseRate: 87, effectiveness: 90 },
+        { medium: 'Email', interactions: 10, responses: 7, responseRate: 70, effectiveness: 75 }
+      ]
+    }
+  ];
+
+  if (viewMode === 'overall') {
+    res.json({
+      success: true,
+      data: {
+        overall: overallData,
+        period: period
+      }
+    });
+  } else {
+    res.json({
+      success: true,
+      data: {
+        byContact: contactData,
+        period: period
+      }
+    });
+  }
+});
 
 export default router;
 

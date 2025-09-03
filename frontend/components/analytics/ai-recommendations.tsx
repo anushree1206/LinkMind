@@ -98,80 +98,76 @@ export function AIRecommendations() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* AI Recommendations */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Brain className="h-5 w-5 text-primary" />
-            <CardTitle className="text-foreground">AI Recommendations</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
+    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+      <CardHeader className="pb-4">
+        <div className="flex items-center gap-2">
+          <Brain className="h-5 w-5 text-primary" />
+          <CardTitle className="text-foreground">AI Recommendations</CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {recommendations.map((rec, index) => (
             <motion.div
               key={rec.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
-              className="p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors"
+              className="p-4 rounded-lg border border-border/50 hover:bg-muted/20 transition-all duration-200 hover:border-primary/20"
             >
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0">
-                  <div className="p-2 rounded-lg bg-card-foreground/10">
+              <div className="flex flex-col h-full">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-2 rounded-md bg-primary/10">
                     <rec.icon className={`w-4 h-4 ${rec.color}`} />
                   </div>
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h4 className="font-medium text-foreground text-sm">{rec.title}</h4>
-                    <Badge className={`text-xs ${getImpactColor(rec.impact)}`}>{rec.impact} Impact</Badge>
-                    <Badge variant="outline" className={`text-xs ${getEffortColor(rec.effort)}`}>
-                      {rec.effort} Effort
+                  <div className="flex gap-1">
+                    <Badge className={`text-xs px-1.5 py-0.5 ${getImpactColor(rec.impact)}`}>{rec.impact}</Badge>
+                    <Badge variant="outline" className={`text-xs px-1.5 py-0.5 ${getEffortColor(rec.effort)}`}>
+                      {rec.effort}
                     </Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-3 leading-relaxed">{rec.description}</p>
-                  <Button size="sm" variant="outline" className="text-xs h-7 bg-transparent">
-                    Apply Suggestion
-                  </Button>
                 </div>
+                
+                <h4 className="font-medium text-foreground text-sm mb-2 leading-tight">{rec.title}</h4>
+                <p className="text-xs text-muted-foreground mb-4 leading-relaxed flex-1">{rec.description}</p>
+                
+                <Button size="sm" variant="outline" className="text-xs h-7 w-full bg-transparent hover:bg-primary/10">
+                  Apply Suggestion
+                </Button>
               </div>
             </motion.div>
           ))}
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Quick Tips */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Lightbulb className="h-5 w-5 text-accent" />
-            <CardTitle className="text-foreground">Quick Tips</CardTitle>
+        {/* Quick Tips Section */}
+        <div className="mt-6 pt-6 border-t border-border/50">
+          <div className="flex items-center gap-2 mb-4">
+            <Lightbulb className="h-4 w-4 text-accent" />
+            <h3 className="font-medium text-foreground text-sm">Quick Tips</h3>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {quickTips.map((tip, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4, delay: index * 0.1 }}
-              className="p-3 rounded-lg bg-muted/30 border border-border"
-            >
-              <div className="flex items-start gap-2">
-                <Target className="w-3 h-3 text-primary mt-1 flex-shrink-0" />
-                <div>
-                  <p className="text-xs text-foreground leading-relaxed mb-1">{tip.tip}</p>
-                  <Badge variant="outline" className="text-xs">
-                    {tip.category}
-                  </Badge>
+          <div className="grid md:grid-cols-2 gap-3">
+            {quickTips.map((tip, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.1 }}
+                className="p-3 rounded-lg bg-muted/20 border border-border/30"
+              >
+                <div className="flex items-start gap-2">
+                  <Target className="w-3 h-3 text-primary mt-1 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-xs text-foreground leading-relaxed mb-2">{tip.tip}</p>
+                    <Badge variant="outline" className="text-xs">
+                      {tip.category}
+                    </Badge>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
-        </CardContent>
-      </Card>
-    </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
