@@ -11,9 +11,11 @@ import {
   addNote,
   addInteraction,
   updateRelationshipStrength,
+  updateRelationshipStrengths,
   getContactStats,
   searchContacts,
-  bulkUpdateContacts
+  bulkUpdateContacts,
+  getContactsNeedingAttention
 } from '../controllers/contactController.js';
 
 const router = express.Router();
@@ -402,5 +404,21 @@ router.post('/:id/interactions', validateObjectId, validateInteractionAddition, 
  * @body    { relationshipStrength }
  */
 router.put('/:id/relationship-strength', validateObjectId, validateRelationshipStrengthUpdate, handleValidationErrors, updateRelationshipStrength);
+
+/**
+ * @route   POST /api/contacts/update-relationship-strengths
+ * @desc    Update relationship strengths for all user contacts based on interaction dates
+ * @access  Private
+ * @header  Authorization: Bearer <token>
+ */
+router.post('/update-relationship-strengths', updateRelationshipStrengths);
+
+/**
+ * @route   GET /api/contacts/needing-attention
+ * @desc    Get contacts that need attention (at-risk or haven't been contacted recently)
+ * @access  Private
+ * @header  Authorization: Bearer <token>
+ */
+router.get('/needing-attention', getContactsNeedingAttention);
 
 export default router;

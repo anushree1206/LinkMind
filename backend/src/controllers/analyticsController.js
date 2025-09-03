@@ -2,6 +2,7 @@ import Analytics from '../models/Analytics.js';
 import Contact from '../models/Contact.js';
 import Interaction from '../models/Interaction.js';
 import mongoose from 'mongoose';
+import { generateSmartNudge } from '../utils/geminiService.js';
 
 // Get relationship growth trends for a user
 export const getRelationshipGrowthTrends = async (req, res) => {
@@ -1421,3 +1422,26 @@ export const getNetworkingScore = async (req, res) => {
   }
 };
 
+// Get smart nudge suggestion for a contact
+export const getSmartNudge = async (req, res) => {
+  try {
+    const { contactId } = req.params;
+
+    // Fetch last 5 interactions for this contact
+    const interactions = await Interaction.find({ contact: contactId })
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    if (!interactions.length) {
+      return res.status(404).json({ error: "No interactions found" });
+    }
+
+    // Generate message using Gemini
+    const suggestion = await generateSmartNudge(interactions);
+
+    res.json({ suggestion });
+  } catch (error) {
+    console.error("Smart Nudge Error:", error);
+    res.status(500).json({ error: "Failed to generate smart nudge" });
+  }
+};

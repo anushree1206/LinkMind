@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Sync Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-container { max-width: 800px; margin: 0 auto; }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>LinkedIn Sync Test</h1>
+        <p>This page tests the LinkedIn sync functionality independently.</p>
+        
+        <button onclick="testBackendConnection()">Test Backend Connection</button>
+        <button onclick="testLinkedInSync()">Test LinkedIn Sync</button>
+        <button onclick="clearResults()">Clear Results</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function testBackendConnection() {
+            addResult('Testing backend connection...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL.replace('/api', '')}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult(`✅ Backend connected successfully: ${data.message}`, 'success');
+                } else {
+                    addResult(`❌ Backend connection failed: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Backend connection error: ${error.message}`, 'error');
+                addResult('Make sure the backend server is running on port 5000', 'error');
+            }
+        }
+        
+        async function testLinkedInSync() {
+            addResult('Testing LinkedIn sync...', 'info');
+            
+            // Mock token for testing
+            const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NzU5YjI4ZjEyMzQ1Njc4OTBhYmNkZWYiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJpYXQiOjE3MzU5MzA4MDAsImV4cCI6MTczNTkzNDQwMH0.test';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/integrations/linkedin/sync`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${mockToken}`
+                    }
+                });
+                
+                addResult(`Response Status: ${response.status} ${response.statusText}`, 'info');
+                addResult(`Response Headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2)}`, 'info');
+                
+                let responseData;
+                const contentType = response.headers.get('content-type');
+                
+                if (contentType && contentType.includes('application/json')) {
+                    responseData = await response.json();
+                } else {
+                    const textData = await response.text();
+                    addResult(`Non-JSON Response: ${textData}`, 'error');
+                    return;
+                }
+                
+                addResult(`Response Data: <pre>${JSON.stringify(responseData, null, 2)}</pre>`, 'info');
+                
+                if (response.ok && responseData.success) {
+                    addResult(`✅ LinkedIn sync successful: ${responseData.message}`, 'success');
+                    if (responseData.data) {
+                        addResult(`Contacts added: ${responseData.data.summary.totalInserted}`, 'success');
+                        addResult(`Contacts skipped: ${responseData.data.summary.totalSkipped}`, 'info');
+                    }
+                } else {
+                    addResult(`❌ LinkedIn sync failed: ${responseData.message || 'Unknown error'}`, 'error');
+                }
+                
+            } catch (error) {
+                addResult(`❌ LinkedIn sync error: ${error.message}`, 'error');
+                addResult(`Error details: <pre>${JSON.stringify(error, null, 2)}</pre>`, 'error');
+            }
+        }
+        
+        // Auto-test backend connection on page load
+        window.addEventListener('load', () => {
+            setTimeout(testBackendConnection, 1000);
+        });
+    </script>
+</body>
+</html>

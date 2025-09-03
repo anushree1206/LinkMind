@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Sync Complete Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-result { padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .warning { background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        button { padding: 12px 24px; margin: 8px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+        .status-running { background-color: #28a745; }
+        .status-stopped { background-color: #dc3545; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #dee2e6; border-radius: 5px; }
+        h2 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 LinkedIn Sync Complete Test Suite</h1>
+        <p>Comprehensive testing for LinkMind LinkedIn sync functionality</p>
+        
+        <div class="section">
+            <h2>🖥️ Backend Server Status</h2>
+            <button onclick="checkBackendStatus()">Check Backend Status</button>
+            <button onclick="startBackendServer()">Start Backend Server</button>
+            <div id="backend-status"></div>
+        </div>
+        
+        <div class="section">
+            <h2>🔐 Authentication Test</h2>
+            <button onclick="testAuthentication()">Test Auth Token</button>
+            <button onclick="createMockUser()">Create Mock User</button>
+            <div id="auth-results"></div>
+        </div>
+        
+        <div class="section">
+            <h2>🔗 LinkedIn Sync Test</h2>
+            <button onclick="testLinkedInSync()">Test LinkedIn Sync</button>
+            <button onclick="testLinkedInSyncWithAuth()">Test with Authentication</button>
+            <div id="linkedin-results"></div>
+        </div>
+        
+        <div class="section">
+            <h2>📊 Results Summary</h2>
+            <button onclick="clearAllResults()">Clear All Results</button>
+            <div id="summary"></div>
+        </div>
+        
+        <div id="all-results"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        const HEALTH_URL = 'http://localhost:5000/health';
+        let testResults = [];
+        
+        function addResult(message, type = 'info', section = 'all-results') {
+            const results = document.getElementById(section);
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> - ${message}`;
+            results.appendChild(div);
+            
+            testResults.push({ time: new Date(), message, type });
+            updateSummary();
+        }
+        
+        function clearAllResults() {
+            document.getElementById('all-results').innerHTML = '';
+            document.getElementById('backend-status').innerHTML = '';
+            document.getElementById('auth-results').innerHTML = '';
+            document.getElementById('linkedin-results').innerHTML = '';
+            document.getElementById('summary').innerHTML = '';
+            testResults = [];
+        }
+        
+        function updateSummary() {
+            const summary = document.getElementById('summary');
+            const successCount = testResults.filter(r => r.type === 'success').length;
+            const errorCount = testResults.filter(r => r.type === 'error').length;
+            const totalCount = testResults.length;
+            
+            summary.innerHTML = `
+                <div class="test-result info">
+                    <strong>Test Summary:</strong> ${totalCount} total tests | 
+                    <span style="color: #28a745;">${successCount} passed</span> | 
+                    <span style="color: #dc3545;">${errorCount} failed</span>
+                </div>
+            `;
+        }
+        
+        async function checkBackendStatus() {
+            addResult('Checking backend server status...', 'info', 'backend-status');
+            
+            try {
+                const response = await fetch(HEALTH_URL, { 
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Backend server is running: ${data.message}`, 'success', 'backend-status');
+                    addResult(`<span class="status-indicator status-running"></span>Server Status: ONLINE`, 'success', 'backend-status');
+                    return true;
+                } else {
+                    addResult(`❌ Backend server responded with error: ${response.status} ${response.statusText}`, 'error', 'backend-status');
+                    return false;
+                }
+            } catch (error) {
+                addResult(`❌ Backend server is not running: ${error.message}`, 'error', 'backend-status');
+                addResult(`<span class="status-indicator status-stopped"></span>Server Status: OFFLINE`, 'error', 'backend-status');
+                addResult('💡 Please start the backend server manually using start-backend.ps1', 'warning', 'backend-status');
+                return false;
+            }
+        }
+        
+        function startBackendServer() {
+            addResult('⚠️ Cannot start server automatically from browser. Please run:', 'warning', 'backend-status');
+            addResult('<pre>powershell -ExecutionPolicy Bypass -File "c:\\Users\\shruthi keerthana\\OneDrive\\Desktop\\LinkMind\\start-backend.ps1"</pre>', 'info', 'backend-status');
+        }
+        
+        async function testAuthentication() {
+            addResult('Testing authentication...', 'info', 'auth-results');
+            
+            // Test with mock JWT token
+            const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NzU5YjI4ZjEyMzQ1Njc4OTBhYmNkZWYiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJpYXQiOjE3MzU5MzA4MDAsImV4cCI6MTczNTkzNDQwMH0.test-signature';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+                    headers: {
+                        'Authorization': `Bearer ${mockToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                addResult(`Auth test response: ${response.status} ${response.statusText}`, 'info', 'auth-results');
+                
+                if (response.status === 401) {
+                    addResult('✅ Authentication is working (401 Unauthorized as expected for mock token)', 'success', 'auth-results');
+                } else if (response.ok) {
+                    addResult('✅ Authentication endpoint is accessible', 'success', 'auth-results');
+                } else {
+                    addResult(`⚠️ Unexpected auth response: ${response.status}`, 'warning', 'auth-results');
+                }
+            } catch (error) {
+                addResult(`❌ Authentication test failed: ${error.message}`, 'error', 'auth-results');
+            }
+        }
+        
+        async function createMockUser() {
+            addResult('Creating mock user for testing...', 'info', 'auth-results');
+            
+            const mockUser = {
+                fullName: 'Test User',
+                email: 'test@linkmind.com',
+                password: 'testpassword123'
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(mockUser)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    addResult('✅ Mock user created successfully', 'success', 'auth-results');
+                    if (data.data && data.data.tokens) {
+                        localStorage.setItem('testToken', data.data.tokens.accessToken);
+                        addResult('✅ Auth token saved for testing', 'success', 'auth-results');
+                    }
+                } else {
+                    addResult(`⚠️ Mock user creation: ${data.message || 'Unknown response'}`, 'warning', 'auth-results');
+                }
+            } catch (error) {
+                addResult(`❌ Mock user creation failed: ${error.message}`, 'error', 'auth-results');
+            }
+        }
+        
+        async function testLinkedInSync() {
+            addResult('Testing LinkedIn sync without authentication...', 'info', 'linkedin-results');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/integrations/linkedin/sync`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                addResult(`LinkedIn sync response: ${response.status} ${response.statusText}`, 'info', 'linkedin-results');
+                
+                if (response.status === 401) {
+                    addResult('✅ LinkedIn sync requires authentication (401 as expected)', 'success', 'linkedin-results');
+                } else {
+                    const data = await response.json();
+                    addResult(`Response data: <pre>${JSON.stringify(data, null, 2)}</pre>`, 'info', 'linkedin-results');
+                }
+            } catch (error) {
+                addResult(`❌ LinkedIn sync test failed: ${error.message}`, 'error', 'linkedin-results');
+            }
+        }
+        
+        async function testLinkedInSyncWithAuth() {
+            addResult('Testing LinkedIn sync with authentication...', 'info', 'linkedin-results');
+            
+            const token = localStorage.getItem('testToken') || 'mock-token-for-testing';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/integrations/linkedin/sync`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                addResult(`LinkedIn sync with auth response: ${response.status} ${response.statusText}`, 'info', 'linkedin-results');
+                
+                let responseData;
+                try {
+                    responseData = await response.json();
+                } catch (jsonError) {
+                    const textData = await response.text();
+                    addResult(`Non-JSON response: ${textData}`, 'warning', 'linkedin-results');
+                    return;
+                }
+                
+                addResult(`Response data: <pre>${JSON.stringify(responseData, null, 2)}</pre>`, 'info', 'linkedin-results');
+                
+                if (response.ok && responseData.success) {
+                    addResult(`✅ LinkedIn sync successful: ${responseData.message}`, 'success', 'linkedin-results');
+                    if (responseData.data && responseData.data.summary) {
+                        addResult(`📊 Contacts added: ${responseData.data.summary.totalInserted}`, 'success', 'linkedin-results');
+                        addResult(`📊 Contacts skipped: ${responseData.data.summary.totalSkipped}`, 'info', 'linkedin-results');
+                    }
+                } else {
+                    addResult(`❌ LinkedIn sync failed: ${responseData.message || 'Unknown error'}`, 'error', 'linkedin-results');
+                }
+                
+            } catch (error) {
+                addResult(`❌ LinkedIn sync with auth failed: ${error.message}`, 'error', 'linkedin-results');
+            }
+        }
+        
+        // Auto-run initial tests
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                checkBackendStatus();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

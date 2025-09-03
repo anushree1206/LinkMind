@@ -1,6 +1,7 @@
 import Contact from '../models/Contact.js';
 import Interaction from '../models/Interaction.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { updateUserRelationshipStrengths, getContactsNeedingAttention as getAtRiskContacts } from '../utils/relationshipUpdater.js';
 
 /**
  * Contact Controller
@@ -405,20 +406,8 @@ export const addInteraction = asyncHandler(async (req, res) => {
     contact.interactions = contact.interactions.slice(-5);
   }
   
-  // Recompute relationship strength based on lastContacted
-  const days = 0;
-  const now = new Date();
-  const diffDays = 0;
-  
-  // Set by rules: Strong 3–5 days, Medium 7–9 days, Weak >15 days
-  const daysSince = 0;
-  if (contact.lastContacted) {
-    const ms = now - new Date(contact.lastContacted);
-    const d = Math.floor(ms / (1000 * 60 * 60 * 24));
-    if (d >= 3 && d <= 5) contact.relationshipStrength = 'Strong';
-    else if (d >= 7 && d <= 9) contact.relationshipStrength = 'Medium';
-    else if (d > 15) contact.relationshipStrength = 'Weak';
-  }
+  // Update relationship strength based on interaction
+  contact.updateRelationshipStrengthByDate();
   
   await contact.save();
 
@@ -660,6 +649,41 @@ export const bulkUpdateContacts = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * Update relationship strengths for user's contacts
+ * POST /api/contacts/update-relationship-strengths
+ */
+export const updateRelationshipStrengths = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  
+  const result = await updateUserRelationshipStrengths(userId);
+  
+  res.status(200).json({
+    success: true,
+    message: `Relationship strengths updated successfully. ${result.updatedCount} contacts updated.`,
+    data: result
+  });
+});
+
+/**
+ * Get contacts needing attention
+ * GET /api/contacts/needing-attention
+ */
+export const getContactsNeedingAttention = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  
+  const contacts = await getAtRiskContacts(userId);
+  
+  res.status(200).json({
+    success: true,
+    message: 'Contacts needing attention retrieved successfully',
+    data: {
+      contacts,
+      totalCount: contacts.length
+    }
+  });
+});
+
 export default {
   getContacts,
   getContactById,
@@ -669,7 +693,9 @@ export default {
   addNote,
   addInteraction,
   updateRelationshipStrength,
+  updateRelationshipStrengths,
   getContactStats,
   searchContacts,
-  bulkUpdateContacts
+  bulkUpdateContacts,
+  getContactsNeedingAttention
 };

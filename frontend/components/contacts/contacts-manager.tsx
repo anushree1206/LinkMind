@@ -15,7 +15,7 @@ import { ContactDetailView } from "./contact-detail-view"
 import { EditContactForm } from "./edit-contact-form"
 import { InteractionModal } from "@/components/ui/interaction-modal"
 import { contactsAPI } from "@/lib/api"
-import { Contact } from "@/types/contact"
+import { Contact } from "@/app/types/contact"
 
 const allTags = [
   "Work",
@@ -95,11 +95,13 @@ export function ContactsManager() {
   const getStrengthColor = (strength: string) => {
     switch (strength) {
       case "Strong":
-        return "bg-primary text-primary-foreground"
+        return "bg-green-500 text-white"
       case "Medium":
-        return "bg-accent text-accent-foreground"
+        return "bg-yellow-500 text-white"
       case "Weak":
-        return "bg-destructive text-destructive-foreground"
+        return "bg-orange-500 text-white"
+      case "At-Risk":
+        return "bg-red-500 text-white"
       default:
         return "bg-muted text-muted-foreground"
     }
@@ -190,6 +192,7 @@ export function ContactsManager() {
                   <SelectItem value="Strong">Strong</SelectItem>
                   <SelectItem value="Medium">Medium</SelectItem>
                   <SelectItem value="Weak">Weak</SelectItem>
+                  <SelectItem value="At-Risk">At-Risk</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -275,7 +278,7 @@ export function ContactsManager() {
                         <AvatarFallback className="bg-primary text-primary-foreground">
                           {contact.fullName
                             .split(" ")
-                            .map((n) => n[0])
+                            .map((n: string) => n[0])
                             .join("")}
                         </AvatarFallback>
                       </Avatar>
@@ -293,7 +296,7 @@ export function ContactsManager() {
                   </div>
 
                   <div className="flex flex-wrap gap-1 mb-4">
-                    {contact.tags.slice(0, 3).map((tag) => (
+                    {contact.tags.slice(0, 3).map((tag: string) => (
                       <Badge key={tag} variant="outline" className="text-xs">
                         {tag}
                       </Badge>
@@ -358,7 +361,7 @@ export function ContactsManager() {
                     <AvatarFallback className="bg-primary text-primary-foreground">
                       {contact.fullName
                         .split(" ")
-                        .map((n) => n[0])
+                        .map((n: string) => n[0])
                         .join("")}
                     </AvatarFallback>
                   </Avatar>
@@ -376,7 +379,7 @@ export function ContactsManager() {
                       {contact.jobTitle} at {contact.company}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
-                      {contact.tags.slice(0, 3).map((tag) => (
+                      {contact.tags.slice(0, 3).map((tag: string) => (
                         <Badge key={tag} variant="outline" className="text-xs">
                           {tag}
                         </Badge>

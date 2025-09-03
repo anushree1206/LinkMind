@@ -98,10 +98,33 @@ contactSchema.methods.addNote = async function (content, isImportant = false) {
   return this.notes;
 };
 
-// Instance: add an interaction (updates lastContacted)
+// Instance: add an interaction (updates lastContacted and relationship strength)
 contactSchema.methods.addInteraction = async function (type, content, outcome = 'Neutral', followUpDate = null) {
   this.lastContacted = new Date();
+  this.updateRelationshipStrengthByDate();
   await this.save();
+};
+
+// Instance: update relationship strength based on last contact date
+contactSchema.methods.updateRelationshipStrengthByDate = function() {
+  if (!this.lastContacted) {
+    this.relationshipStrength = 'Weak';
+    return;
+  }
+  
+  const now = new Date();
+  const daysSinceLastContact = Math.floor((now - new Date(this.lastContacted)) / (1000 * 60 * 60 * 24));
+  
+  // Update relationship strength based on interaction frequency
+  if (daysSinceLastContact <= 7) {
+    this.relationshipStrength = 'Strong';
+  } else if (daysSinceLastContact <= 30) {
+    this.relationshipStrength = 'Medium';
+  } else if (daysSinceLastContact <= 90) {
+    this.relationshipStrength = 'Weak';
+  } else {
+    this.relationshipStrength = 'At-Risk';
+  }
 };
 
 // Instance: update relationship strength
