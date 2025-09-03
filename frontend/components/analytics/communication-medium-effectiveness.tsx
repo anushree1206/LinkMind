@@ -126,9 +126,7 @@ export function CommunicationMediumEffectiveness() {
   }
 
   return (
-    <div className="space-y-6">
-      <ReplyIndicatorCard />
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -276,7 +274,6 @@ export function CommunicationMediumEffectiveness() {
           )}
         </CardContent>
         </Card>
-      </motion.div>
-    </div>
+    </motion.div>
   )
 }

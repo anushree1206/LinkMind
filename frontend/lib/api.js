@@ -558,6 +558,7 @@ export const analyticsAPI = {
   // Get smart nudge suggestion for a contact
   getSmartNudge: async (contactId) => {
     return await apiRequest(`/analytics/nudge/${contactId}`);
+  },
 
   // Get reply indicators
   getReplyIndicators: async (period = 7) => {
@@ -568,7 +569,6 @@ export const analyticsAPI = {
     const endpoint = `/analytics/reply-indicators?${queryString}`;
     
     return await apiRequest(endpoint);
-
   },
 };
 
@@ -595,6 +595,41 @@ export const interactionAPI = {
   // Get dashboard summary
   getDashboardSummary: async () => {
     return await apiRequest('/dashboard/summary');
+  },
+};
+
+// Message API functions
+export const messageAPI = {
+  // Send a message to a contact
+  sendMessage: async (contactId, messageData) => {
+    return await apiRequest('/messages', {
+      method: 'POST',
+      body: JSON.stringify({
+        contactId,
+        ...messageData
+      }),
+    });
+  },
+
+  // Get messages with filters
+  getMessages: async (filters = {}) => {
+    const queryParams = new URLSearchParams();
+    
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, value);
+      }
+    });
+    
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/messages?${queryString}` : '/messages';
+    
+    return await apiRequest(endpoint);
+  },
+
+  // Get message statistics
+  getMessageStats: async () => {
+    return await apiRequest('/messages/stats');
   },
 };
 
@@ -659,12 +694,10 @@ export const apiUtils = {
 export default {
   auth: authAPI,
   contacts: contactsAPI,
-
   analytics: analyticsAPI,
-
   dashboard: dashboardAPI,
   interactions: interactionAPI,
+  messages: messageAPI,
   integrations: integrationAPI,
-
   utils: apiUtils,
 };

@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Send, Sparkles, Mail, Linkedin } from "lucide-react"
-import { integrationAPI, interactionAPI } from "@/lib/api"
-import { ContactBasic } from "@/types/contact"
+import { integrationAPI, interactionAPI, messageAPI } from "@/lib/api"
+import { ContactBasic } from "@/app/types/contact"
 
 interface InteractionModalProps {
   isOpen: boolean
@@ -29,11 +29,15 @@ export function InteractionModal({ isOpen, onClose, contact, onInteractionSent }
       setAiSuggestion("")
       setShowAISuggestion(false)
       
-      // Auto-select Email if contact has email, otherwise LinkedIn
-      if (contact.email) {
+      // Auto-select the best available option
+      if (contact.email && contact.linkedInUrl) {
+        setInteractionType('Email') // Default to email if both available
+      } else if (contact.email) {
         setInteractionType('Email')
-      } else {
+      } else if (contact.linkedInUrl) {
         setInteractionType('LinkedIn')
+      } else {
+        setInteractionType('Email') // Default fallback
       }
     }
   }, [isOpen, contact])
@@ -66,15 +70,25 @@ export function InteractionModal({ isOpen, onClose, contact, onInteractionSent }
 
     setIsLoading(true)
     try {
-      const interactionData = {
-        type: interactionType,
+      // Send message using the message API
+      const messageData = {
         content: message,
-        outcome: "Positive"
+        type: interactionType,
+        subject: `Message from LinkMind - ${interactionType}`,
+        priority: 'Medium'
       }
 
-      const response = await interactionAPI.addInteraction(contact._id, interactionData)
+      const response = await messageAPI.sendMessage(contact._id, messageData)
       
       if (response.success) {
+        // Also add as interaction for tracking
+        const interactionData = {
+          type: interactionType,
+          content: message,
+          outcome: "Positive"
+        }
+        await interactionAPI.addInteraction(contact._id, interactionData)
+
         // Call the callback to refresh data
         if (onInteractionSent) {
           onInteractionSent()
@@ -89,10 +103,10 @@ export function InteractionModal({ isOpen, onClose, contact, onInteractionSent }
           window.dispatchEvent(new Event('data-updated'))
         }
       } else {
-        console.error("Failed to send interaction:", response.message)
+        console.error("Failed to send message:", response.message)
       }
     } catch (error) {
-      console.error("Error sending interaction:", error)
+      console.error("Error sending message:", error)
     } finally {
       setIsLoading(false)
     }
@@ -102,6 +116,7 @@ export function InteractionModal({ isOpen, onClose, contact, onInteractionSent }
 
   const canSendEmail = contact.email && interactionType === 'Email'
   const canSendLinkedIn = contact.linkedInUrl && interactionType === 'LinkedIn'
+  const canSendAnyway = interactionType === 'Email' || interactionType === 'LinkedIn' // Allow sending even without contact info
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -111,26 +126,27 @@ export function InteractionModal({ isOpen, onClose, contact, onInteractionSent }
         </DialogHeader>
         
         <div className="space-y-4">
-          {/* Interaction Type Selection */}
-          <div className="flex gap-2">
-            <Button
-              variant={interactionType === 'Email' ? 'default' : 'outline'}
-              onClick={() => setInteractionType('Email')}
-              disabled={!contact.email}
-              className="flex items-center gap-2"
-            >
-              <Mail className="w-4 h-4" />
-              Email
-            </Button>
-            <Button
-              variant={interactionType === 'LinkedIn' ? 'default' : 'outline'}
-              onClick={() => setInteractionType('LinkedIn')}
-              disabled={!contact.linkedInUrl}
-              className="flex items-center gap-2"
-            >
-              <Linkedin className="w-4 h-4" />
-              LinkedIn
-            </Button>
+          {/* Send Method Selection */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Send via:</label>
+            <div className="flex gap-2">
+              <Button
+                variant={interactionType === 'Email' ? 'default' : 'outline'}
+                onClick={() => setInteractionType('Email')}
+                className="flex items-center gap-2"
+              >
+                <Mail className="w-4 h-4" />
+                Email {!contact.email && '(No email)'}
+              </Button>
+              <Button
+                variant={interactionType === 'LinkedIn' ? 'default' : 'outline'}
+                onClick={() => setInteractionType('LinkedIn')}
+                className="flex items-center gap-2"
+              >
+                <Linkedin className="w-4 h-4" />
+                LinkedIn {!contact.linkedInUrl && '(No URL)'}
+              </Button>
+            </div>
           </div>
 
           {/* Contact Info */}
@@ -138,7 +154,7 @@ export function InteractionModal({ isOpen, onClose, contact, onInteractionSent }
             <div>
               <label className="text-sm font-medium text-foreground">To:</label>
               <p className="text-sm text-muted-foreground">
-                {interactionType === 'Email' ? contact.email : contact.linkedInUrl}
+                {interactionType === 'Email' ? contact.email || 'No email available' : contact.linkedInUrl || 'No LinkedIn URL available'}
               </p>
             </div>
             <div>
@@ -196,11 +212,11 @@ export function InteractionModal({ isOpen, onClose, contact, onInteractionSent }
               </Button>
               <Button 
                 onClick={handleSend} 
-                disabled={isLoading || !message.trim() || (!canSendEmail && !canSendLinkedIn)}
+                disabled={isLoading || !message.trim()}
                 className="flex items-center gap-2"
               >
                 <Send className="w-4 h-4 mr-2" />
-                {isLoading ? "Sending..." : `Send ${interactionType}`}
+                {isLoading ? "Sending..." : `Send via ${interactionType}`}
               </Button>
             </div>
           </div>
@@ -208,12 +224,12 @@ export function InteractionModal({ isOpen, onClose, contact, onInteractionSent }
           {/* Validation Messages */}
           {interactionType === 'Email' && !contact.email && (
             <p className="text-sm text-destructive">
-              This contact doesn't have an email address. Use LinkedIn instead.
+              ⚠️ This contact doesn't have an email address. Please select LinkedIn or add an email address.
             </p>
           )}
           {interactionType === 'LinkedIn' && !contact.linkedInUrl && (
             <p className="text-sm text-destructive">
-              This contact doesn't have a LinkedIn URL. Use Email instead.
+              ⚠️ This contact doesn't have a LinkedIn URL. Please select Email or add a LinkedIn URL.
             </p>
           )}
         </div>

@@ -16,8 +16,6 @@ import { EditContactForm } from "./edit-contact-form"
 import { InteractionModal } from "@/components/ui/interaction-modal"
 import { contactsAPI } from "@/lib/api"
 
-import { Contact } from "@/app/types/contact"
-
 import { Contact, MessageStats } from "../../app/types/contact"
 import { ReplyIndicatorCard } from "../analytics/reply-indicator-card"
 
@@ -117,9 +115,23 @@ export function ContactsManager() {
     setIsEditDialogOpen(true)
   }
 
-  const handleInteraction = (contact: Contact, type: 'Email' | 'LinkedIn') => {
+  const handleInteraction = (contact: Contact, type?: 'Email' | 'LinkedIn') => {
     setContactToInteract(contact)
-    setInteractionType(type)
+    // Auto-determine the best interaction type if not specified
+    if (!type) {
+      if (contact.email && contact.linkedInUrl) {
+        // If both are available, prefer email
+        setInteractionType('Email')
+      } else if (contact.email) {
+        setInteractionType('Email')
+      } else if (contact.linkedInUrl) {
+        setInteractionType('LinkedIn')
+      } else {
+        setInteractionType('Email') // Default fallback
+      }
+    } else {
+      setInteractionType(type)
+    }
     setIsInteractionModalOpen(true)
   }
 
@@ -371,16 +383,6 @@ export function ContactsManager() {
                           <Mail className="h-3 w-3" />
                         </Button>
                       )}
-                      {contact.linkedInUrl && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleInteraction(contact, 'LinkedIn')}
-                          title="Send LinkedIn Message"
-                        >
-                          <MessageCircle className="h-3 w-3" />
-                        </Button>
-                      )}
                       <Button variant="ghost" size="sm" onClick={() => handleEditContact(contact)}>
                         <Edit className="h-3 w-3" />
                       </Button>
@@ -490,16 +492,6 @@ export function ContactsManager() {
                         title="Send Email"
                       >
                         <Mail className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {contact.linkedInUrl && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => handleInteraction(contact, 'LinkedIn')}
-                        title="Send LinkedIn Message"
-                      >
-                        <MessageCircle className="h-4 w-4" />
                       </Button>
                     )}
                     <Button variant="ghost" size="sm" onClick={() => handleEditContact(contact)}>

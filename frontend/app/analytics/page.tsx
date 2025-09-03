@@ -29,9 +29,6 @@ export default function AnalyticsPage() {
             <AnalyticsOverview />
           </ErrorBoundary>
 
-          <ErrorBoundary>
-            <ReplyIndicatorCard />
-          </ErrorBoundary>
 
           <ErrorBoundary>
             <RelationshipGrowthChart />
