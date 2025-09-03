@@ -1,5 +1,6 @@
 import Contact from '../models/Contact.js';
 import Interaction from '../models/Interaction.js';
+import Message from '../models/Message.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 
 /**
@@ -37,6 +38,23 @@ export const getContacts = asyncHandler(async (req, res) => {
   // Get contacts with filters
   const contacts = await Contact.findByUserWithFilters(userId, filters);
 
+  // Get message data for each contact
+  const contactIds = contacts.map(contact => contact._id);
+  const messages = await Message.find({
+    user: userId,
+    contact: { $in: contactIds }
+  }).sort({ createdAt: -1 });
+
+  // Group messages by contact
+  const messagesByContact = {};
+  messages.forEach(message => {
+    const contactId = message.contact.toString();
+    if (!messagesByContact[contactId]) {
+      messagesByContact[contactId] = [];
+    }
+    messagesByContact[contactId].push(message);
+  });
+
   // Apply sorting
   const sortOptions = {};
   sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
@@ -58,28 +76,48 @@ export const getContacts = asyncHandler(async (req, res) => {
   const totalContacts = contacts.length;
   const totalPages = Math.ceil(totalContacts / parseInt(limit));
 
-  // Format contacts for response
-  const formattedContacts = paginatedContacts.map(contact => ({
-    _id: contact._id,
-    fullName: contact.fullName,
-    jobTitle: contact.jobTitle,
-    company: contact.company,
-    email: contact.email,
-    phone: contact.phone,
-    linkedInUrl: contact.linkedInUrl,
-    relationshipStrength: contact.relationshipStrength,
-    tags: contact.tags,
-    location: contact.location,
-    lastContacted: contact.lastContacted,
-    notes: contact.notes,
-    totalInteractions: contact.totalInteractions,
-    daysSinceLastContact: contact.daysSinceLastContact,
-    contactAge: contact.contactAge,
-    isFavorite: contact.isFavorite,
-    source: contact.source,
-    createdAt: contact.createdAt,
-    updatedAt: contact.updatedAt
-  }));
+  // Format contacts for response with message data
+  const formattedContacts = paginatedContacts.map(contact => {
+    const contactMessages = messagesByContact[contact._id.toString()] || [];
+    const latestMessage = contactMessages[0]; // Most recent message
+    const respondedMessages = contactMessages.filter(msg => msg.status === 'responded');
+    const pendingMessages = contactMessages.filter(msg => msg.status === 'pending');
+    
+    // Find latest replied message
+    const latestReply = respondedMessages.find(msg => msg.repliedAt);
+    
+    return {
+      _id: contact._id,
+      fullName: contact.fullName,
+      jobTitle: contact.jobTitle,
+      company: contact.company,
+      email: contact.email,
+      phone: contact.phone,
+      linkedInUrl: contact.linkedInUrl,
+      relationshipStrength: contact.relationshipStrength,
+      tags: contact.tags,
+      location: contact.location,
+      lastContacted: contact.lastContacted,
+      notes: contact.notes,
+      totalInteractions: contact.totalInteractions,
+      daysSinceLastContact: contact.daysSinceLastContact,
+      contactAge: contact.contactAge,
+      isFavorite: contact.isFavorite,
+      source: contact.source,
+      createdAt: contact.createdAt,
+      updatedAt: contact.updatedAt,
+      // Message reply data
+      messageStats: {
+        totalMessages: contactMessages.length,
+        respondedMessages: respondedMessages.length,
+        pendingMessages: pendingMessages.length,
+        hasReplied: respondedMessages.length > 0,
+        lastReplyDate: latestReply?.repliedAt || null,
+        lastReplyContent: latestReply?.replyContent || null,
+        responseRate: contactMessages.length > 0 ? Math.round((respondedMessages.length / contactMessages.length) * 100) : 0
+      }
+    };
+  });
 
   res.status(200).json({
     success: true,

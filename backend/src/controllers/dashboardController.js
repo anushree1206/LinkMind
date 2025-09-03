@@ -1,5 +1,7 @@
 import Contact from '../models/Contact.js';
 import Interaction from '../models/Interaction.js';
+import Analytics from '../models/Analytics.js';
+import Message from '../models/Message.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 
 /**
@@ -493,22 +495,57 @@ export const getRecentContacts = asyncHandler(async (req, res) => {
     .limit(5)
     .select('fullName company jobTitle email relationshipStrength tags lastContacted');
 
-  const formattedContacts = recentContacts.map(contact => ({
-    id: contact._id,
-    fullName: contact.fullName,
-    company: contact.company,
-    jobTitle: contact.jobTitle,
-    email: contact.email,
-    relationshipStrength: contact.relationshipStrength,
-    tags: contact.tags,
-    lastContacted: contact.lastContacted,
-    actions: {
-      message: true,
-      email: !!contact.email,
-      call: true,
-      linkedin: true
+  // Get message data for each contact
+  const contactIds = recentContacts.map(contact => contact._id);
+  const messages = await Message.find({
+    user: userId,
+    contact: { $in: contactIds }
+  }).sort({ createdAt: -1 });
+
+  // Group messages by contact
+  const messagesByContact = {};
+  messages.forEach(message => {
+    const contactId = message.contact.toString();
+    if (!messagesByContact[contactId]) {
+      messagesByContact[contactId] = [];
     }
-  }));
+    messagesByContact[contactId].push(message);
+  });
+
+  const formattedContacts = recentContacts.map(contact => {
+    const contactMessages = messagesByContact[contact._id.toString()] || [];
+    const respondedMessages = contactMessages.filter(msg => msg.status === 'responded');
+    const pendingMessages = contactMessages.filter(msg => msg.status === 'pending');
+    
+    // Find latest replied message
+    const latestReply = respondedMessages.find(msg => msg.repliedAt);
+    
+    return {
+      _id: contact._id,
+      fullName: contact.fullName,
+      company: contact.company,
+      jobTitle: contact.jobTitle,
+      email: contact.email,
+      relationshipStrength: contact.relationshipStrength,
+      tags: contact.tags,
+      lastContacted: contact.lastContacted,
+      messageStats: {
+        totalMessages: contactMessages.length,
+        respondedMessages: respondedMessages.length,
+        pendingMessages: pendingMessages.length,
+        hasReplied: respondedMessages.length > 0,
+        lastReplyDate: latestReply?.repliedAt || null,
+        lastReplyContent: latestReply?.replyContent || null,
+        responseRate: contactMessages.length > 0 ? Math.round((respondedMessages.length / contactMessages.length) * 100) : 0
+      },
+      actions: {
+        message: true,
+        email: !!contact.email,
+        call: true,
+        linkedin: true
+      }
+    };
+  });
 
   res.status(200).json({
     success: true,
