@@ -1,3 +1,13 @@
+export interface MessageStats {
+  totalMessages: number
+  respondedMessages: number
+  pendingMessages: number
+  hasReplied: boolean
+  lastReplyDate: string | null
+  lastReplyContent: string | null
+  responseRate: number
+}
+
 export interface Contact {
   _id: string
   fullName: string
@@ -14,6 +24,7 @@ export interface Contact {
   source: string
   createdAt: string
   updatedAt: string
+  messageStats?: MessageStats
 }
 
 export interface ContactBasic {

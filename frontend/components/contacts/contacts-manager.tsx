@@ -8,14 +8,15 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader,DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Search, Plus, Grid, List, MoreHorizontal, Edit, MessageCircle, Mail } from "lucide-react"
+import { Search, Plus, Grid, List, MoreHorizontal, Edit, MessageCircle, Mail, CheckCircle, Clock, AlertCircle } from "lucide-react"
 import { motion } from "framer-motion"
 import { AddContactForm } from "./add-contact-form"
 import { ContactDetailView } from "./contact-detail-view"
 import { EditContactForm } from "./edit-contact-form"
 import { InteractionModal } from "@/components/ui/interaction-modal"
 import { contactsAPI } from "@/lib/api"
-import { Contact } from "@/types/contact"
+import { Contact, MessageStats } from "../../app/types/contact"
+import { ReplyIndicatorCard } from "../analytics/reply-indicator-card"
 
 const allTags = [
   "Work",
@@ -118,6 +119,9 @@ export function ContactsManager() {
 
   return (
     <div className="space-y-6">
+      {/* Reply Indicator Card */}
+      <ReplyIndicatorCard />
+      
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -275,14 +279,37 @@ export function ContactsManager() {
                         <AvatarFallback className="bg-primary text-primary-foreground">
                           {contact.fullName
                             .split(" ")
-                            .map((n) => n[0])
+                            .map((n: string) => n[0])
                             .join("")}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                          {contact.fullName}
-                        </h3>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                            {contact.fullName}
+                          </h3>
+                          {/* Reply Status Indicator */}
+                          {contact.messageStats && contact.messageStats.totalMessages > 0 && (
+                            <div className="flex items-center gap-1">
+                              {contact.messageStats.hasReplied ? (
+                                <div className="flex items-center gap-1 text-green-600" title={`Last replied: ${contact.messageStats.lastReplyDate ? new Date(contact.messageStats.lastReplyDate).toLocaleDateString() : 'Unknown'}`}>
+                                  <CheckCircle className="h-3 w-3" />
+                                  <span className="text-xs">Replied</span>
+                                </div>
+                              ) : contact.messageStats.pendingMessages > 0 ? (
+                                <div className="flex items-center gap-1 text-orange-600" title={`${contact.messageStats.pendingMessages} pending messages`}>
+                                  <Clock className="h-3 w-3" />
+                                  <span className="text-xs">Pending</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1 text-gray-500" title="No recent messages">
+                                  <AlertCircle className="h-3 w-3" />
+                                  <span className="text-xs">No reply</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                         <p className="text-sm text-muted-foreground">{contact.jobTitle}</p>
                         <p className="text-sm text-muted-foreground">{contact.company}</p>
                       </div>
@@ -293,7 +320,7 @@ export function ContactsManager() {
                   </div>
 
                   <div className="flex flex-wrap gap-1 mb-4">
-                    {contact.tags.slice(0, 3).map((tag) => (
+                    {contact.tags.slice(0, 3).map((tag: string) => (
                       <Badge key={tag} variant="outline" className="text-xs">
                         {tag}
                       </Badge>
@@ -303,11 +330,28 @@ export function ContactsManager() {
                         +{contact.tags.length - 3}
                       </Badge>
                     )}
+                    {/* Message Stats */}
+                    {contact.messageStats && contact.messageStats.totalMessages > 0 && (
+                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                        {contact.messageStats.responseRate}% response rate
+                      </Badge>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between">
                     <div className="text-xs text-muted-foreground">
-                      Last contact: {new Date(contact.lastContacted).toLocaleDateString()}
+                      {contact.messageStats?.hasReplied ? (
+                        <div>
+                          <span>Last reply: {contact.messageStats.lastReplyDate ? new Date(contact.messageStats.lastReplyDate).toLocaleDateString() : 'Unknown'}</span>
+                          {contact.messageStats.lastReplyContent && (
+                            <div className="text-xs italic truncate max-w-48" title={contact.messageStats.lastReplyContent}>
+                              "{contact.messageStats.lastReplyContent}"
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span>Last contact: {new Date(contact.lastContacted).toLocaleDateString()}</span>
+                      )}
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       {contact.email && (
@@ -358,7 +402,7 @@ export function ContactsManager() {
                     <AvatarFallback className="bg-primary text-primary-foreground">
                       {contact.fullName
                         .split(" ")
-                        .map((n) => n[0])
+                        .map((n: string) => n[0])
                         .join("")}
                     </AvatarFallback>
                   </Avatar>
@@ -371,26 +415,63 @@ export function ContactsManager() {
                       <Badge className={`text-xs ${getStrengthColor(contact.relationshipStrength)}`}>
                         {contact.relationshipStrength}
                       </Badge>
+                      {/* Reply Status Indicator */}
+                      {contact.messageStats && contact.messageStats.totalMessages > 0 && (
+                        <div className="flex items-center gap-1">
+                          {contact.messageStats.hasReplied ? (
+                            <div className="flex items-center gap-1 text-green-600" title={`Last replied: ${contact.messageStats.lastReplyDate ? new Date(contact.messageStats.lastReplyDate).toLocaleDateString() : 'Unknown'}`}>
+                              <CheckCircle className="h-3 w-3" />
+                              <span className="text-xs">Replied</span>
+                            </div>
+                          ) : contact.messageStats.pendingMessages > 0 ? (
+                            <div className="flex items-center gap-1 text-orange-600" title={`${contact.messageStats.pendingMessages} pending messages`}>
+                              <Clock className="h-3 w-3" />
+                              <span className="text-xs">Pending</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1 text-gray-500" title="No recent messages">
+                              <AlertCircle className="h-3 w-3" />
+                              <span className="text-xs">No reply</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {contact.jobTitle} at {contact.company}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
-                      {contact.tags.slice(0, 3).map((tag) => (
+                      {contact.tags.slice(0, 3).map((tag: string) => (
                         <Badge key={tag} variant="outline" className="text-xs">
                           {tag}
                         </Badge>
                       ))}
+                      {/* Message Stats */}
+                      {contact.messageStats && contact.messageStats.totalMessages > 0 && (
+                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                          {contact.messageStats.responseRate}% response rate
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <p className="text-sm text-muted-foreground">Last contact</p>
-                    <p className="text-sm font-medium text-foreground">
-                      {new Date(contact.lastContacted).toLocaleDateString()}
+                    <p className="text-sm text-muted-foreground">
+                      {contact.messageStats?.hasReplied ? 'Last reply' : 'Last contact'}
                     </p>
+                    <p className="text-sm font-medium text-foreground">
+                      {contact.messageStats?.hasReplied && contact.messageStats.lastReplyDate 
+                        ? new Date(contact.messageStats.lastReplyDate).toLocaleDateString()
+                        : new Date(contact.lastContacted).toLocaleDateString()
+                      }
+                    </p>
+                    {contact.messageStats?.hasReplied && contact.messageStats.lastReplyContent && (
+                      <p className="text-xs text-muted-foreground italic truncate max-w-32" title={contact.messageStats.lastReplyContent}>
+                        "{contact.messageStats.lastReplyContent}"
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

@@ -13,10 +13,14 @@ import analyticsRoutes from './routes/analyticsRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import interactionRoutes from './routes/interactionRoutes.js';
 import integrationRoutes from './routes/integrationRoutes.js';
+import messageRoutes from './routes/messageRoutes.js';
 
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
+
+// Import services
+import replySimulationService from './services/replySimulationService.js';
 
 // Load environment variables
 dotenv.config();
@@ -79,6 +83,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/contacts', contactRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/messages', messageRoutes);
 
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api', interactionRoutes);
@@ -110,10 +115,16 @@ const connectDB = async () => {
 const startServer = async () => {
   try {
     await connectDB();
+    
+    // Initialize reply simulation cleanup on server start
+    await replySimulationService.cleanupExpiredTimeouts();
+    console.log('✅ Reply simulation service initialized');
+    
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📱 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
       console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+      console.log(`💬 Message simulation ready`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

@@ -524,6 +524,17 @@ export const analyticsAPI = {
   getNetworkingScore: async () => {
     return await apiRequest('/analytics/networking-score');
   },
+  
+  // Get reply indicators
+  getReplyIndicators: async (period = 7) => {
+    const queryParams = new URLSearchParams();
+    queryParams.append('period', period.toString());
+    
+    const queryString = queryParams.toString();
+    const endpoint = `/analytics/reply-indicators?${queryString}`;
+    
+    return await apiRequest(endpoint);
+  },
 };
 
 // Interaction API functions

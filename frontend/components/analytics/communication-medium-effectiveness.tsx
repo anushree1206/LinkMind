@@ -8,6 +8,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { RefreshCw, Mail, MessageCircle, Phone, Users } from "lucide-react"
 import { motion } from "framer-motion"
 import { analyticsAPI } from "@/lib/api"
+import { ReplyIndicatorCard } from "./reply-indicator-card"
 
 interface MediumData {
   medium: string
@@ -125,8 +126,10 @@ export function CommunicationMediumEffectiveness() {
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-      <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+    <div className="space-y-6">
+      <ReplyIndicatorCard />
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -272,7 +275,8 @@ export function CommunicationMediumEffectiveness() {
             </div>
           )}
         </CardContent>
-      </Card>
-    </motion.div>
+        </Card>
+      </motion.div>
+    </div>
   )
 }

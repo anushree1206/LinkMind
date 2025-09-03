@@ -7,6 +7,7 @@ import { OpportunitySuggestions } from "@/components/analytics/opportunity-sugge
 import { NetworkingScore } from "@/components/analytics/networking-score"
 import { CommunicationMediumEffectiveness } from "@/components/analytics/communication-medium-effectiveness"
 import { CommunicationChannelInsights } from "@/components/analytics/communication-channel-insights"
+import { ReplyIndicatorCard } from "@/components/analytics/reply-indicator-card"
 
 import { ErrorBoundary } from "@/components/ui/error-boundary"
 
@@ -26,6 +27,10 @@ export default function AnalyticsPage() {
 
           <ErrorBoundary>
             <AnalyticsOverview />
+          </ErrorBoundary>
+
+          <ErrorBoundary>
+            <ReplyIndicatorCard />
           </ErrorBoundary>
 
           <ErrorBoundary>
