@@ -9,7 +9,20 @@ import { Input } from "@/components/ui/input"
 import { Search, MessageCircle, Mail, MoreHorizontal } from "lucide-react"
 import { motion } from "framer-motion"
 import { dashboardAPI } from "@/lib/api"
-import { Contact } from "@/types/contact"
+// import { Contact } from "@/types/contact"
+
+interface Contact {
+  _id: string
+  fullName: string
+  jobTitle: string
+  company: string
+  relationshipStrength: string
+  tags: string[]
+  lastInteraction: string
+  lastContacted: string
+  email?: string
+  linkedInUrl?: string
+}
 
 export function ContactsList() {
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -112,7 +125,7 @@ export function ContactsList() {
         ) : (
           filteredContacts.map((contact, index) => (
             <motion.div
-              key={contact._id}
+              key={contact._id || `contact-${index}`}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
@@ -124,7 +137,7 @@ export function ContactsList() {
                   <AvatarFallback className="bg-primary text-primary-foreground">
                     {contact.fullName
                       .split(" ")
-                      .map((n) => n[0])
+                      .map((n: string) => n[0])
                       .join("")}
                   </AvatarFallback>
                 </Avatar>
@@ -140,7 +153,7 @@ export function ContactsList() {
                     {contact.jobTitle} at {contact.company}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
-                    {contact.tags.slice(0, 2).map((tag) => (
+                    {contact.tags.slice(0, 2).map((tag: string) => (
                       <Badge key={tag} variant="outline" className="text-xs">
                         {tag}
                       </Badge>

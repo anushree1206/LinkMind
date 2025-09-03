@@ -446,6 +446,20 @@ export const analyticsAPI = {
     
     return await apiRequest(endpoint);
   },
+
+  // Get communication medium effectiveness
+  getCommunicationMediumEffectiveness: async (period = 30, viewMode = 'overall', contactId) => {
+    const queryParams = new URLSearchParams();
+    queryParams.append('period', period.toString());
+    queryParams.append('viewMode', viewMode);
+    
+    if (contactId) queryParams.append('contactId', contactId);
+    
+    const queryString = queryParams.toString();
+    const endpoint = `/analytics/communication-medium-effectiveness?${queryString}`;
+    
+    return await apiRequest(endpoint);
+  },
   
   // Get AI-powered opportunity suggestions
   getOpportunitySuggestions: async (limit = 5) => {
