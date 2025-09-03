@@ -110,15 +110,28 @@ export function AddContactForm({ onClose }: AddContactFormProps) {
       }
     } catch (error: any) {
       console.error("❌ Full API error object:", error);
-    
+      
+      let errorMessage = "Failed to create contact. Please try again.";
+      
       if (error?.details && Array.isArray(error.details)) {
         console.error("❌ Validation errors:");
         error.details.forEach((detail: any, index: number) => {
-          console.error(`  ${index + 1}. ${detail.path?.join('.') || '[unknown]'}: ${detail.message}`);
+          console.error(`  ${index + 1}. ${detail.field || detail.path?.join('.') || '[unknown]'}: ${detail.message}`);
         });
-      } else {
-        console.error("❌ Unexpected error format:", error);
+        errorMessage = `Validation failed: ${error.details.map((d: any) => d.message).join(', ')}`;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.status === 401) {
+        errorMessage = "Authentication failed. Please log in again.";
+      } else if (error?.status === 403) {
+        errorMessage = "You don't have permission to perform this action.";
+      } else if (error?.status >= 500) {
+        errorMessage = "Server error. Please try again later.";
       }
+      
+      // Show error to user (you can replace this with a toast notification)
+      alert(errorMessage);
+      console.error("❌ Error creating contact:", errorMessage);
     } finally {
       setIsLoading(false)
     }

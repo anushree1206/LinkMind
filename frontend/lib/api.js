@@ -103,9 +103,29 @@ const apiRequest = async (endpoint, options = {}) => {
     }
     
     if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('API Error Response:', errorData);  // Add this line
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (jsonError) {
+          errorData = {
+            message: `HTTP ${response.status}: ${response.statusText}`,
+            status: response.status,
+            statusText: response.statusText
+          };
+        }
+        
+        console.error('API Error Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url,
+          errorData
+        });
+        
+        const error = new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        error.status = response.status;
+        error.details = errorData.details || [];
+        error.errorCode = errorData.error;
+        throw error;
       }
     
     return await response.json();
