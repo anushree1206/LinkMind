@@ -5,7 +5,7 @@ import replySimulationService from '../services/replySimulationService.js';
 // Create a new message and schedule reply simulation
 export const createMessage = async (req, res) => {
   try {
-    const { contactId, content, type = 'Email', subject, priority = 'Medium' } = req.body;
+    const { contactId, content, type = 'Email', subject, priority = 'Medium', linkedInUrl } = req.body;
     const userId = req.user.id;
 
     // Validate contact exists and belongs to user
@@ -17,16 +17,21 @@ export const createMessage = async (req, res) => {
       });
     }
 
-    // Create the message
-    const message = new Message({
+    // Prepare message data
+    const messageData = {
       user: userId,
       contact: contactId,
       content,
       type,
-      subject,
+      subject: subject || `Message from LinkMind - ${type}`,
       priority,
-      status: 'pending'
-    });
+      status: 'pending',
+      // Include LinkedIn URL for LinkedIn messages
+      ...(type === 'LinkedIn' && linkedInUrl && { linkedInUrl })
+    };
+
+    // Create the message
+    const message = new Message(messageData);
 
     await message.save();
 

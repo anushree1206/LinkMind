@@ -131,14 +131,14 @@ export function ContactsList() {
                   </AvatarFallback>
                 </Avatar>
 
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <h4 className="font-medium text-foreground">{contact.fullName}</h4>
-                    <Badge className={`text-xs ${getStrengthColor(contact.relationshipStrength)}`}>
+                    <h4 className="font-medium text-foreground truncate">{contact.fullName}</h4>
+                    <Badge className={`text-xs flex-shrink-0 ${getStrengthColor(contact.relationshipStrength)}`}>
                       {contact.relationshipStrength}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground truncate">
                     {contact.jobTitle} at {contact.company}
                   </p>
                   <div className="flex items-center gap-2 mt-1">

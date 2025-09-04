@@ -9,6 +9,15 @@ import { Send, Sparkles, Mail, Linkedin } from "lucide-react"
 import { integrationAPI, interactionAPI, messageAPI } from "@/lib/api"
 import { ContactBasic } from "@/app/types/contact"
 
+interface AISuggestion {
+  suggestion: string
+  context: string
+  lastContact: string
+  contactName: string
+  company: string
+  jobTitle: string
+}
+
 interface InteractionModalProps {
   isOpen: boolean
   onClose: () => void
@@ -20,13 +29,13 @@ export function InteractionModal({ isOpen, onClose, contact, onInteractionSent }
   const [interactionType, setInteractionType] = useState<'Email' | 'LinkedIn'>('Email')
   const [message, setMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [aiSuggestion, setAiSuggestion] = useState("")
+  const [aiSuggestion, setAiSuggestion] = useState<AISuggestion | null>(null)
   const [showAISuggestion, setShowAISuggestion] = useState(false)
 
   useEffect(() => {
     if (isOpen && contact) {
       setMessage("")
-      setAiSuggestion("")
+      setAiSuggestion(null)
       setShowAISuggestion(false)
       
       // Auto-select the best available option
@@ -46,69 +55,97 @@ export function InteractionModal({ isOpen, onClose, contact, onInteractionSent }
     if (!contact) return
     
     setIsLoading(true)
+    setShowAISuggestion(false)
     try {
       const response = await integrationAPI.getAISuggestion(contact._id, interactionType)
-      if (response.success) {
-        setAiSuggestion(response.data.suggestion)
+      if (response.success && response.data) {
+        setAiSuggestion({
+          suggestion: response.data.suggestion,
+          context: response.data.context || 'previous interactions',
+          lastContact: response.data.lastContact || 'Never',
+          contactName: response.data.contactName || contact.fullName,
+          company: response.data.company || contact.company || '',
+          jobTitle: response.data.jobTitle || contact.jobTitle || ''
+        })
         setShowAISuggestion(true)
       }
     } catch (error) {
       console.error('Failed to get AI suggestion:', error)
+      // Show error to user
+      alert('Failed to generate AI suggestion. Please try again.')
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleUseAISuggestion = () => {
-    if (aiSuggestion) {
-      setMessage(aiSuggestion)
+    if (aiSuggestion?.suggestion) {
+      setMessage(aiSuggestion.suggestion)
+      setShowAISuggestion(false)
     }
   }
 
   const handleSend = async () => {
-    if (!contact || !message.trim()) return
+    if (!contact || !message.trim()) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      // Send message using the message API
+      // Prepare message data for the message API
       const messageData = {
-        content: message,
+        content: message.trim(),
         type: interactionType,
         subject: `Message from LinkMind - ${interactionType}`,
-        priority: 'Medium'
-      }
+        priority: 'Medium',
+        ...(interactionType === 'LinkedIn' && contact.linkedInUrl && {
+          linkedInUrl: contact.linkedInUrl
+        })
+      };
 
-      const response = await messageAPI.sendMessage(contact._id, messageData)
+      console.log('Sending message with data:', { contactId: contact._id, ...messageData });
+      
+      // For LinkedIn messages, we'll only save them as messages (not interactions)
+      const response = await messageAPI.sendMessage(contact._id, messageData);
       
       if (response.success) {
-        // Also add as interaction for tracking
-        const interactionData = {
-          type: interactionType,
-          content: message.trim(),
-          outcome: "Positive"
+        // Only create an interaction for non-LinkedIn messages
+        if (interactionType !== 'LinkedIn') {
+          const interactionData = {
+            type: interactionType,
+            content: message.trim().substring(0, 2000),
+            outcome: 'Positive'
+          };
+          
+          try {
+            await interactionAPI.addInteraction(contact._id, interactionData);
+          } catch (error) {
+            console.warn('Message sent but interaction logging failed:', error);
+          }
         }
-        await interactionAPI.addInteraction(contact._id, interactionData)
 
         // Call the callback to refresh data
         if (onInteractionSent) {
-          onInteractionSent()
+          onInteractionSent();
         }
 
         // Close modal and reset state
-        onClose()
-        setMessage("")
-        setAiSuggestion("")
-        setShowAISuggestion(false)
+        onClose();
+        setMessage("");
+        setAiSuggestion(null);
+        setShowAISuggestion(false);
+        
         if (typeof window !== 'undefined') {
-          window.dispatchEvent(new Event('data-updated'))
+          window.dispatchEvent(new Event('data-updated'));
         }
       } else {
-        console.error("Failed to send message:", response.message)
+        console.error("Failed to send message:", response.message);
+        alert(`Failed to send ${interactionType} message. Please try again.`);
       }
     } catch (error) {
-      console.error("Error sending message:", error)
+      console.error("Error sending message:", error);
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+      alert(`Error: ${errorMessage}`);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -176,23 +213,60 @@ export function InteractionModal({ isOpen, onClose, contact, onInteractionSent }
           </div>
 
           {/* AI Suggestion */}
-          {showAISuggestion && (
-            <div className="p-4 bg-muted/50 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">AI Suggestion:</span>
+          <div className="space-y-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleGetAISuggestion}
+              disabled={isLoading}
+              className="w-full flex items-center gap-2 justify-center"
+            >
+              <Sparkles className="w-4 h-4" />
+              {isLoading ? 'Analyzing conversation...' : 'Get AI-Powered Suggestion'}
+            </Button>
+
+            {showAISuggestion && (
+              <div className="p-4 bg-muted/50 rounded-lg border border-border">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium text-foreground">AI Suggestion</span>
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                      Based on {aiSuggestion?.context || 'previous interactions'}
+                    </span>
+                  </div>
+                  {aiSuggestion?.lastContact && (
+                    <span className="text-xs text-muted-foreground">
+                      Last contact: {aiSuggestion.lastContact}
+                    </span>
+                  )}
+                </div>
+                
+                <div className="bg-background p-3 rounded border border-border mb-3">
+                  <p className="text-sm whitespace-pre-line">{aiSuggestion?.suggestion}</p>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleUseAISuggestion}
+                    className="text-xs"
+                  >
+                    Use This Suggestion
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAISuggestion(false)}
+                    className="text-xs text-muted-foreground"
+                  >
+                    Dismiss
+                  </Button>
+                </div>
               </div>
-              <p className="text-sm text-foreground mb-3">{aiSuggestion}</p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleUseAISuggestion}
-                className="text-xs"
-              >
-                Use This Suggestion
-              </Button>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Action Buttons */}
           <div className="flex justify-between">
