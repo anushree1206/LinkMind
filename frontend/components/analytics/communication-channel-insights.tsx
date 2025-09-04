@@ -39,25 +39,11 @@ interface ChannelData {
   totalInteractions: number;
   channelBreakdown: {
     email: number;
-    call: number;
-    message: number;
-    meeting: number;
-    coffee: number;
-    lunch: number;
-    conference: number;
-    referral: number;
-    other: number;
+    linkedin: number;
   };
   channelPercentages: {
     email: number;
-    call: number;
-    message: number;
-    meeting: number;
-    coffee: number;
-    lunch: number;
-    conference: number;
-    referral: number;
-    other: number;
+    linkedin: number;
   };
   insights: Array<{
     type: string;
@@ -68,38 +54,28 @@ interface ChannelData {
 
 const CHANNEL_COLORS = {
   email: '#3b82f6',      // blue
-  call: '#10b981',       // green
-  message: '#f59e0b',    // amber
-  meeting: '#8b5cf6',    // purple
-  coffee: '#ef4444',     // red
-  lunch: '#06b6d4',      // cyan
-  conference: '#84cc16', // lime
-  referral: '#f97316',   // orange
-  other: '#6b7280'       // gray
+  linkedin: '#0a66c2'    // linkedin blue
 };
 
 const CHANNEL_ICONS = {
   email: Mail,
-  call: Phone,
-  message: MessageSquare,
-  meeting: Calendar,
-  coffee: Coffee,
-  lunch: Coffee,
-  conference: Users,
-  referral: TrendingUp,
-  other: MessageSquare
+  linkedin: (props: any) => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      {...props}
+    >
+      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.413v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065a2.066 2.066 0 1 1 2.063 2.065zm1.782 13.02H3.555V9h3.564v11.453zM22.225 0H1.771C.792 0 0 .775 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .775 23.2 0 22.222 0h.003z" />
+    </svg>
+  )
 };
 
 const CHANNEL_LABELS = {
   email: 'Email',
-  call: 'Phone Call',
-  message: 'Message',
-  meeting: 'Meeting',
-  coffee: 'Coffee',
-  lunch: 'Lunch',
-  conference: 'Conference',
-  referral: 'Referral',
-  other: 'Other'
+  linkedin: 'LinkedIn'
 };
 
 export function CommunicationChannelInsights() {
@@ -182,7 +158,7 @@ export function CommunicationChannelInsights() {
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              label={({ name, percent = 0 }) => `${name} ${(percent * 100).toFixed(0)}%`}
               outerRadius={120}
               fill="#8884d8"
               dataKey="value"
@@ -330,52 +306,47 @@ export function CommunicationChannelInsights() {
         {data && (
           <>
             {/* Summary Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20">
-                <MessageSquare className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                    Total Interactions
-                  </p>
-                  <p className="text-lg font-bold text-blue-900 dark:text-blue-100">
-                    {data.totalInteractions}
-                  </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 border border-blue-100 dark:border-blue-900/30">
+                <div className="flex items-center gap-3">
+                  <Mail className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                      Email Interactions
+                    </p>
+                    <p className="text-2xl font-bold text-blue-900 dark:text-blue-50">
+                      {data.channelBreakdown.email}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-sm text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/50 px-2 py-1 rounded-full">
+                  {data.channelPercentages.email}% of total
                 </div>
               </div>
               
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-950/20">
-                <Phone className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="text-sm font-medium text-green-900 dark:text-green-100">
-                    Phone Calls
-                  </p>
-                  <p className="text-lg font-bold text-green-900 dark:text-green-100">
-                    {data.channelBreakdown.call}
-                  </p>
+              <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-800 dark:to-blue-900 border border-blue-200 dark:border-blue-800/50">
+                <div className="flex items-center gap-3">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    className="text-white"
+                  >
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.413v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065a2.066 2.066 0 1 1 2.063 2.065zm1.782 13.02H3.555V9h3.564v11.453zM22.225 0H1.771C.792 0 0 .775 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .775 23.2 0 22.222 0h.003z" />
+                  </svg>
+                  <div>
+                    <p className="text-sm font-medium text-white/90">
+                      LinkedIn Engagements
+                    </p>
+                    <p className="text-2xl font-bold text-white">
+                      {data.channelBreakdown.linkedin}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20">
-                <Mail className="h-5 w-5 text-amber-600" />
-                <div>
-                  <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                    Emails
-                  </p>
-                  <p className="text-lg font-bold text-amber-900 dark:text-amber-100">
-                    {data.channelBreakdown.email}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20">
-                <Calendar className="h-5 w-5 text-purple-600" />
-                <div>
-                  <p className="text-sm font-medium text-purple-900 dark:text-purple-100">
-                    Meetings
-                  </p>
-                  <p className="text-lg font-bold text-purple-900 dark:text-purple-100">
-                    {data.channelBreakdown.meeting}
-                  </p>
+                <div className="text-sm text-white/90 bg-white/20 px-2 py-1 rounded-full">
+                  {data.channelPercentages.linkedin}% of total
                 </div>
               </div>
             </div>

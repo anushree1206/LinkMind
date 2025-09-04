@@ -1,14 +1,11 @@
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { AnalyticsOverview } from "@/components/analytics/analytics-overview"
-import { AIRecommendations } from "@/components/analytics/ai-recommendations"
+import { AIInsights } from "@/components/analytics/ai-insights"
 import { RelationshipGrowthChart } from "@/components/analytics/relationship-growth-chart"
-
 import { OpportunitySuggestions } from "@/components/analytics/opportunity-suggestions"
 import { NetworkingScore } from "@/components/analytics/networking-score"
 import { CommunicationMediumEffectiveness } from "@/components/analytics/communication-medium-effectiveness"
 import { CommunicationChannelInsights } from "@/components/analytics/communication-channel-insights"
-import { ReplyIndicatorCard } from "@/components/analytics/reply-indicator-card"
-
 import { ErrorBoundary } from "@/components/ui/error-boundary"
 
 export default function AnalyticsPage() {
@@ -55,9 +52,9 @@ export default function AnalyticsPage() {
             </ErrorBoundary>
           </div>
 
-          {/* AI Recommendations - Full Width */}
+          {/* AI-Powered Insights */}
           <ErrorBoundary>
-            <AIRecommendations />
+            <AIInsights className="col-span-full" />
           </ErrorBoundary>
         </div>
       </ErrorBoundary>

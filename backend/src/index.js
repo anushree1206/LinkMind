@@ -15,6 +15,7 @@ import interactionRoutes from './routes/interactionRoutes.js';
 import integrationRoutes from './routes/integrationRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
 
 
 // Import middleware
@@ -90,6 +91,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api', interactionRoutes);
 app.use('/api/integrations', integrationRoutes);
+app.use('/api/ai', aiRoutes); // AI recommendations endpoint
 
 // 404 handler
 app.use('*', (req, res) => {

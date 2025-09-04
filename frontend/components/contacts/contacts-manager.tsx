@@ -173,7 +173,7 @@ export function ContactsManager() {
 
       {/* Filters and Search */}
       <Card className="bg-card border-border">
-        <CardContent className="p-6">
+        <CardContent className="p-1">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">

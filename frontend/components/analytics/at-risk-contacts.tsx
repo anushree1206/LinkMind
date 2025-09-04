@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertTriangle, MessageCircle, Sparkles, Filter } from "lucide-react"
+import { AlertTriangle, MessageCircle, Filter, ChevronDown } from "lucide-react"
 import { motion } from "framer-motion"
 import { dashboardAPI } from "@/lib/api"
+import { useRouter } from "next/navigation"
 import { InteractionModal } from "@/components/ui/interaction-modal"
 
 interface AtRiskContact {
@@ -32,12 +33,15 @@ interface AtRiskContact {
 type TimeFrame = 'daily' | 'weekly' | 'monthly'
 
 export function AtRiskContacts() {
+  const router = useRouter()
   const [atRiskContacts, setAtRiskContacts] = useState<AtRiskContact[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")
-  const [selectedContact, setSelectedContact] = useState<AtRiskContact | null>(null)
-  const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false)
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('monthly')
+  
+  const handleContactClick = (contactId: string) => {
+    router.push(`/contacts/${contactId}`)
+  }
 
   useEffect(() => {
     const fetchAtRiskContacts = async () => {
@@ -62,10 +66,6 @@ export function AtRiskContacts() {
     fetchAtRiskContacts()
   }, [timeFrame])
 
-  const handleInteraction = (contact: AtRiskContact) => {
-    setSelectedContact(contact)
-    setIsInteractionModalOpen(true)
-  }
 
   const getRiskColor = (level: string) => {
     switch (level) {
@@ -77,6 +77,21 @@ export function AtRiskContacts() {
         return "bg-muted text-muted-foreground"
     }
   }
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority.toLowerCase()) {
+      case 'high':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+      case 'low':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+    }
+  }
+
+  const getFilteredContacts = () => atRiskContacts
 
   const formatLastContact = (dateString: string) => {
     if (!dateString) return "Never"
@@ -111,7 +126,7 @@ export function AtRiskContacts() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-destructive" />
-            At-Risk Contacts
+            Top 3 At-Risk Contacts
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -135,7 +150,7 @@ export function AtRiskContacts() {
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
               <Select value={timeFrame} onValueChange={(value: TimeFrame) => setTimeFrame(value)}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-28">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -162,13 +177,17 @@ export function AtRiskContacts() {
             </div>
           ) : (
             <div className="space-y-4">
-              {atRiskContacts.map((contact, index) => (
+              {getFilteredContacts().map((contact, index) => (
                 <motion.div
                   key={contact._id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: index * 0.1 }}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/30 transition-colors"
+                  onClick={() => handleContactClick(contact._id)}
+                  className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/30 transition-colors cursor-pointer"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && handleContactClick(contact._id)}
                 >
                   <div className="flex items-center gap-4">
                     <Avatar className="h-12 w-12">
@@ -199,30 +218,6 @@ export function AtRiskContacts() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {contact.email && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleInteraction(contact)}
-                        className="flex items-center gap-2"
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                        Email
-                      </Button>
-                    )}
-                    {contact.linkedInUrl && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleInteraction(contact)}
-                        className="flex items-center gap-2"
-                      >
-                        <Sparkles className="h-4 w-4" />
-                        LinkedIn
-                      </Button>
-                    )}
-                  </div>
                 </motion.div>
               ))}
             </div>
@@ -230,16 +225,6 @@ export function AtRiskContacts() {
         </CardContent>
       </Card>
 
-      {/* Interaction Modal */}
-      <InteractionModal
-        isOpen={isInteractionModalOpen}
-        onClose={() => {
-          setIsInteractionModalOpen(false)
-          setSelectedContact(null)
-        }}
-        contact={selectedContact}
-        onInteractionSent={refreshContacts}
-      />
     </>
   )
 }

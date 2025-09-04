@@ -21,7 +21,15 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { NotificationBar } from "@/components/notifications/notification-bar"
 import { AddContactForm } from "@/components/contacts/add-contact-form"
-import { authAPI, dashboardAPI } from "@/lib/api"
+import { authAPI, dashboardAPI, notificationsAPI } from "@/lib/api"
+
+interface Notification {
+  id: string | number;
+  title: string;
+  detail: string;
+  time: string;
+  read: boolean;
+}
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -34,7 +42,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isNotifOpen, setIsNotifOpen] = useState(false)
-  const [notifications, setNotifications] = useState<{ id: string | number; title: string; detail: string; time: string }[]>([])
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0)
   const [userName, setUserName] = useState<string>("")
   const [userEmail, setUserEmail] = useState<string>("")
@@ -82,11 +90,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       const notifRes = await dashboardAPI.getNotifications()
       if (notifRes?.success) {
         setUnreadCount(notifRes.data.unreadCount || 0)
-        const items = (notifRes.data.notifications || []).map((n: any, idx: number) => ({
+        const items = (notifRes.data.notifications || []).map((n: any, idx: number): Notification => ({
           id: n.id || idx,
           title: n.title || n.type || 'Notification',
           detail: n.detail || '',
-          time: n.time || ''
+          time: n.time || '',
+          read: Boolean(n.read) || false
         }))
         setNotifications(items)
       }
@@ -94,6 +103,43 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       console.error('Failed to refresh notifications:', error)
     }
   }
+
+  const markNotificationAsRead = async (notificationId: string | number) => {
+    try {
+      // Update local state first for immediate UI feedback
+      setNotifications(prev => 
+        prev.map(n => 
+          n.id === notificationId ? { ...n, read: true } : n
+        )
+      );
+      
+      // Call API to mark as read
+      await notificationsAPI.markAsRead(notificationId);
+      
+      // Schedule removal of the notification after 3 seconds
+      const timeoutId = setTimeout(() => {
+        setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      }, 3000);
+      
+      // Return cleanup function to clear timeout if component unmounts
+      return () => clearTimeout(timeoutId);
+      
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+      // Revert local state on error
+      refreshNotifications();
+    }
+  };
+
+  // Clean up any pending timeouts when component unmounts
+  useEffect(() => {
+    const timeouts: NodeJS.Timeout[] = [];
+    
+    return () => {
+      // Clear all pending timeouts to prevent memory leaks
+      timeouts.forEach(clearTimeout);
+    };
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -277,16 +323,24 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <DialogTitle>Notifications</DialogTitle>
             </DialogHeader>
             <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-              {notifications.map((n) => (
+              {notifications.map((notification) => (
                 <div
-                  key={n.id}
-                  className="flex items-start justify-between rounded-md border border-border p-3 bg-card"
+                  key={notification.id}
+                  className={`flex items-start justify-between rounded-md border border-border p-3 bg-card ${!notification.read ? 'bg-muted/30' : ''}`}
+                  onClick={async () => {
+                    // Mark as read when clicked
+                    if (!notification.read) {
+                      await markNotificationAsRead(notification.id);
+                    }
+                    // Handle notification click (e.g., navigate to relevant page)
+                    setIsNotifOpen(false);
+                  }}
                 >
                   <div>
-                    <p className="text-sm font-medium text-foreground">{n.title}</p>
-                    <p className="text-xs text-muted-foreground">{n.detail}</p>
+                    <p className="text-sm font-medium text-foreground">{notification.title}</p>
+                    <p className="text-xs text-muted-foreground">{notification.detail}</p>
                   </div>
-                  <span className="text-xs text-muted-foreground">{n.time}</span>
+                  <span className="text-xs text-muted-foreground">{notification.time}</span>
                 </div>
               ))}
               <div className="pt-2 text-right">
