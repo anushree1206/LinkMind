@@ -48,26 +48,6 @@ AI / NLP:
 
 OpenAI API (GPT) for draft generation & recommendations
 
-
-📂 Project Structure
-LinkMind/
-│── backend/
-│   ├── models/Contact.js       # Contact schema (interactions, lastContacted, etc.)
-│   ├── routes/contacts.js      # CRUD + interactions
-│   ├── routes/dashboard.js     # Dashboard summary (AI insights, distribution)
-│   ├── middleware/auth.js      # JWT auth
-│   └── server.js               # Express server
-│
-│── frontend/
-│   ├── app/dashboard/          # Dashboard page (cards, at-risk, insights, pie chart)
-│   ├── app/contacts/           # Contacts page (fetch/add/send message/email)
-│   ├── app/analytics/          # Analytics page (AI insights)
-│   ├── components/             # UI components (cards, modals, charts)
-│   └── utils/api.js            # Axios instance with JWT
-│
-│── README.md
-│── package.json
-
 ⚡ API Endpoints
 Contacts
 
